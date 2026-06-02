@@ -67,6 +67,10 @@ export default function AppLayout() {
     }
   }, [location.pathname]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location.pathname]);
+
 
   // Shift+F → facilitator mode
   useEffect(() => {
@@ -297,15 +301,11 @@ export default function AppLayout() {
 
       {/* Content */}
       <main className="relative z-10 flex-1 flex flex-col">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
             className="relative flex-1 flex flex-col"
             style={{ zIndex: 1 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2, delay: 0.18 }}
           >
             <Outlet />
           </motion.div>

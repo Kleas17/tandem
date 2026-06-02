@@ -57,6 +57,34 @@ export interface RiskAnalysis {
   }>;
 }
 
+export interface RecommendationSummary {
+  profileLabel: string;
+  summary: string;
+  case1Friction: string;
+  case1Usage: string;
+  case1Limit: string;
+  case2Friction: string;
+  case2Usage: string;
+  case2Limit: string;
+}
+
+export interface EvaluationKit {
+  title: string;
+  overview: string;
+  whyUseful: string;
+  differentiationLevers: string[];
+  whatTeacherKeeps: string[];
+  vigilancePoints: string[];
+  exampleVariants: string[];
+  prompt: string;
+}
+
+export interface ChatRefinementResult {
+  status: "ready" | "need_info";
+  assistantMessage: string;
+  instructionDraft: string;
+}
+
 function readMessageText(content: unknown): string {
   if (typeof content === "string") return content;
 
@@ -159,6 +187,53 @@ export const FALLBACK_GENERATION: GeneratedSequence = {
   ],
 };
 
+export const FALLBACK_RECOMMENDATION: RecommendationSummary = {
+  profileLabel: "Profil enseignant a cadrer",
+  summary:
+    "L'IA peut surtout t'aider a structurer une premiere base de travail, puis a la rendre plus exploitable selon ton contexte reel.",
+  case1Friction:
+    "Mettre en ordre les objectifs, les seances et les jalons sans surcharge cognitive.",
+  case1Usage:
+    "Utiliser l'IA pour clarifier la progression et formuler une premiere structure.",
+  case1Limit:
+    "L'enseignant doit verifier le rythme reel et la coherence pedagogique.",
+  case2Friction:
+    "Faire varier une evaluation sans perdre en exigence ni en coherence.",
+  case2Usage:
+    "Utiliser l'IA pour proposer des leviers de differenciation et des variantes de consigne.",
+  case2Limit:
+    "L'enseignant garde la main sur le niveau d'exigence, les criteres et les rendus.",
+};
+
+export const FALLBACK_EVALUATION_KIT: EvaluationKit = {
+  title: "Differencier une evaluation avec l'IA",
+  overview:
+    "L'IA peut aider a varier les consignes, les supports et le guidage a partir d'un meme sujet, sans deleguer la validation pedagogique.",
+  whyUseful:
+    "Ce cas d'usage est utile quand la tache repetitive de declinaison des consignes commence a peser sur le temps de preparation ou sur la qualite finale.",
+  differentiationLevers: [
+    "Faire varier le niveau de guidage dans les consignes.",
+    "Proposer plusieurs niveaux de difficultes a partir du meme sujet.",
+    "Adapter les supports ou les modalites de reponse selon les besoins.",
+  ],
+  whatTeacherKeeps: [
+    "Le niveau d'exigence reel de l'evaluation.",
+    "La validation finale des consignes et des attendus.",
+    "Le controle sur ce qui a deja ete travaille en classe.",
+  ],
+  vigilancePoints: [
+    "Eviter une simplification qui nivelle l'evaluation vers le bas.",
+    "Verifier que chaque variante reste alignee avec la competence visee.",
+  ],
+  exampleVariants: [
+    "Version avec guidage fort pour elever en difficulte.",
+    "Version standard.",
+    "Version d'approfondissement plus autonome.",
+  ],
+  prompt:
+    "A partir d'un sujet d'evaluation de base, aide-moi a proposer plusieurs niveaux de guidage et de difficulte sans changer la competence visee. Indique ce que je dois verifier avant utilisation.",
+};
+
 function formatClarifications(sequence: SequenceInput | null, withAnswers = true) {
   if (!sequence?.aiClarifications || sequence.aiClarifications.length === 0) {
     return "Aucune precision complementaire.";
@@ -229,6 +304,38 @@ Aide-moi a :
 Tu ne connais pas mes eleves ni le detail exact de mon programme. Tes suggestions sont un point de depart que je vais adapter et valider.
 
 Format souhaite : liste structuree avec titres, sous-titres et puces. Concis et actionnable.`;
+}
+
+export function buildEvaluationPrompt(sequence: SequenceInput | null) {
+  return `Tu es un assistant pedagogique expert en ingenierie de formation pour le second degre.
+
+Je veux differencier une evaluation avec les elements suivants :
+
+Sujet, contexte et objectif final :
+${sequence?.objectif || "[A completer]"}
+
+Discipline :
+${sequence?.discipline || "[A completer]"}
+
+Niveau / classe :
+${sequence?.niveau || "[A completer]"}
+
+Nombre de seances ou temps disponible avant evaluation :
+${sequence?.seances || "[A completer]"}
+
+Acquis prealables des eleves :
+${sequence?.acquis || "[A completer]"}
+
+Precisions complementaires :
+${formatClarifications(sequence, true)}
+
+Aide-moi a :
+1. Identifier des leviers de differenciation a partir d'un meme sujet
+2. Faire varier les consignes, le guidage ou la difficulte sans perdre l'objectif
+3. Garder la maitrise sur ce que je dois absolument valider moi-meme
+4. Pointer les risques de nivellement ou d'incoherence
+
+Format souhaite : liste structuree, concise, actionnable.`;
 }
 
 export async function requestClarifyingQuestions(form: Record<string, string>) {
@@ -366,6 +473,44 @@ Retourne uniquement un JSON valide avec cette structure :
   };
 }
 
+export async function generateRecommendationSummary(sequence: SequenceInput | null) {
+  const prompt = `Tu produis une recommandation personnalisee tres concise pour un kit IA enseignant.
+
+Contexte :
+- Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}
+- Discipline : ${sequence?.discipline || "Non precise"}
+- Niveau / classe : ${sequence?.niveau || "Non precise"}
+- Nombre de seances : ${sequence?.seances || "Non precise"}
+- Acquis prealables : ${sequence?.acquis || "Non precise"}
+- Precisions complementaires : ${formatClarifications(sequence, true)}
+
+Retourne uniquement un JSON valide avec cette structure :
+{
+  "profileLabel": "string",
+  "summary": "string",
+  "case1Friction": "string",
+  "case1Usage": "string",
+  "case1Limit": "string",
+  "case2Friction": "string",
+  "case2Usage": "string",
+  "case2Limit": "string"
+}`;
+
+  const payload = await callMistralJson(prompt, 0.35);
+  if (!payload || typeof payload !== "object") return FALLBACK_RECOMMENDATION;
+  const data = payload as Record<string, unknown>;
+  return {
+    profileLabel: normalizeString(data.profileLabel, FALLBACK_RECOMMENDATION.profileLabel),
+    summary: normalizeString(data.summary, FALLBACK_RECOMMENDATION.summary),
+    case1Friction: normalizeString(data.case1Friction, FALLBACK_RECOMMENDATION.case1Friction),
+    case1Usage: normalizeString(data.case1Usage, FALLBACK_RECOMMENDATION.case1Usage),
+    case1Limit: normalizeString(data.case1Limit, FALLBACK_RECOMMENDATION.case1Limit),
+    case2Friction: normalizeString(data.case2Friction, FALLBACK_RECOMMENDATION.case2Friction),
+    case2Usage: normalizeString(data.case2Usage, FALLBACK_RECOMMENDATION.case2Usage),
+    case2Limit: normalizeString(data.case2Limit, FALLBACK_RECOMMENDATION.case2Limit),
+  };
+}
+
 export async function generateSequence(sequence: SequenceInput | null) {
   const prompt = `Tu es un assistant pedagogique expert en ingenierie de formation pour le second degre en France.
 
@@ -406,6 +551,66 @@ Contraintes :
 - Ne jamais pretendre connaitre exactement le programme reel si l'info n'est pas fournie.`;
 
   return normalizeGeneration(await callMistralJson(prompt, 0.45));
+}
+
+export async function generateEvaluationKit(sequence: SequenceInput | null) {
+  const prompt = `Tu es un assistant pedagogique expert en ingenierie de formation pour le second degre en France.
+
+Contexte enseignant :
+- Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}
+- Discipline : ${sequence?.discipline || "Non precise"}
+- Niveau / classe : ${sequence?.niveau || "Non precise"}
+- Nombre de seances ou temps disponible : ${sequence?.seances || "Non precise"}
+- Acquis prealables : ${sequence?.acquis || "Non precise"}
+- Precisions complementaires : ${formatClarifications(sequence, true)}
+
+Tu produis le cas d'usage "Differencier une evaluation avec l'IA".
+
+Retourne uniquement un JSON valide avec cette structure :
+{
+  "title": "string",
+  "overview": "string",
+  "whyUseful": "string",
+  "differentiationLevers": ["string"],
+  "whatTeacherKeeps": ["string"],
+  "vigilancePoints": ["string"],
+  "exampleVariants": ["string"],
+  "prompt": "string"
+}
+
+Regles :
+- Reponse en francais.
+- DifferentiationLevers : 3 a 5 leviers actionnables.
+- whatTeacherKeeps : 3 a 4 points maximum.
+- vigilancePoints : 2 a 4 points maximum.
+- exampleVariants : 2 a 4 variantes tres concretes.
+- Le prompt doit etre directement copiable.`;
+
+  const payload = await callMistralJson(prompt, 0.4);
+  if (!payload || typeof payload !== "object") return FALLBACK_EVALUATION_KIT;
+  const data = payload as Record<string, unknown>;
+  return {
+    title: normalizeString(data.title, FALLBACK_EVALUATION_KIT.title),
+    overview: normalizeString(data.overview, FALLBACK_EVALUATION_KIT.overview),
+    whyUseful: normalizeString(data.whyUseful, FALLBACK_EVALUATION_KIT.whyUseful),
+    differentiationLevers: normalizeStringArray(
+      data.differentiationLevers,
+      FALLBACK_EVALUATION_KIT.differentiationLevers,
+    ),
+    whatTeacherKeeps: normalizeStringArray(
+      data.whatTeacherKeeps,
+      FALLBACK_EVALUATION_KIT.whatTeacherKeeps,
+    ),
+    vigilancePoints: normalizeStringArray(
+      data.vigilancePoints,
+      FALLBACK_EVALUATION_KIT.vigilancePoints,
+    ),
+    exampleVariants: normalizeStringArray(
+      data.exampleVariants,
+      FALLBACK_EVALUATION_KIT.exampleVariants,
+    ),
+    prompt: normalizeString(data.prompt, FALLBACK_EVALUATION_KIT.prompt),
+  };
 }
 
 export async function generateSelfCheck(
@@ -492,6 +697,113 @@ ${JSON.stringify(generated)}
 
 Instruction de raffinement :
 ${modeInstruction}
+
+Retourne uniquement un JSON valide avec exactement la meme structure que la proposition actuelle :
+{
+  "title": "string",
+  "overview": "string",
+  "whyThisStructure": "string",
+  "sessions": [
+    {
+      "title": "string",
+      "objective": "string",
+      "focus": "string",
+      "activity": "string"
+    }
+  ],
+  "firstSessionHook": "string",
+  "checkpoints": ["string"],
+  "vigilancePoints": ["string"],
+  "teacherAdjustments": ["string"],
+  "finalAssessment": "string"
+}`;
+
+  return normalizeGeneration(await callMistralJson(prompt, 0.45));
+}
+
+export async function analyzeChatRefinement(
+  sequence: SequenceInput | null,
+  generated: GeneratedSequence,
+  conversation: Array<{ role: "user" | "assistant"; content: string }>,
+) {
+  const transcript = conversation
+    .map((message) => `${message.role === "user" ? "Utilisateur" : "Assistant"}: ${message.content}`)
+    .join("\n");
+
+  const prompt = `Tu aides un enseignant a modifier une proposition de sequence via un mini chat.
+
+Contexte enseignant :
+- Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}
+- Discipline : ${sequence?.discipline || "Non precise"}
+- Niveau / classe : ${sequence?.niveau || "Non precise"}
+- Nombre de seances : ${sequence?.seances || "Non precise"}
+- Acquis prealables : ${sequence?.acquis || "Non precise"}
+- Precisions complementaires : ${formatClarifications(sequence, true)}
+
+Proposition actuelle :
+${JSON.stringify(generated)}
+
+Conversation :
+${transcript}
+
+Ta tache :
+- si la demande est assez claire pour regenerer la sequence, retourne status="ready"
+- sinon retourne status="need_info" et pose une seule question de clarification
+- quand status="ready", instructionDraft doit etre une instruction claire et compacte qui pourra servir a regenerer la sequence
+- assistantMessage doit etre tres court
+
+Retourne uniquement un JSON valide avec cette structure :
+{
+  "status": "ready",
+  "assistantMessage": "string",
+  "instructionDraft": "string"
+}`;
+
+  const payload = await callMistralJson(prompt, 0.3);
+  if (!payload || typeof payload !== "object") {
+    return {
+      status: "need_info",
+      assistantMessage: "Je n'ai pas encore assez d'elements. Quelle modification prioritaire veux-tu exactement ?",
+      instructionDraft: "",
+    } satisfies ChatRefinementResult;
+  }
+  const data = payload as Record<string, unknown>;
+  const status =
+    data.status === "ready" || data.status === "need_info"
+      ? data.status
+      : "need_info";
+  return {
+    status,
+    assistantMessage: normalizeString(
+      data.assistantMessage,
+      status === "ready"
+        ? "OK, la demande est assez claire pour regenerer."
+        : "J'ai besoin d'une precision avant de regenerer.",
+    ),
+    instructionDraft: normalizeString(data.instructionDraft, ""),
+  };
+}
+
+export async function refineSequenceWithInstruction(
+  sequence: SequenceInput | null,
+  generated: GeneratedSequence,
+  instructionDraft: string,
+) {
+  const prompt = `Tu raffines une sequence pedagogique existante sans tout refaire.
+
+Contexte enseignant :
+- Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}
+- Discipline : ${sequence?.discipline || "Non precise"}
+- Niveau / classe : ${sequence?.niveau || "Non precise"}
+- Nombre de seances : ${sequence?.seances || "Non precise"}
+- Acquis prealables : ${sequence?.acquis || "Non precise"}
+- Precisions complementaires : ${formatClarifications(sequence, true)}
+
+Proposition actuelle :
+${JSON.stringify(generated)}
+
+Instruction de raffinement libre :
+${instructionDraft}
 
 Retourne uniquement un JSON valide avec exactement la meme structure que la proposition actuelle :
 {
