@@ -1,115 +1,204 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronRight, BookMarked } from "lucide-react";
+import { ChevronRight, BookMarked, LoaderCircle, Sparkles } from "lucide-react";
 import { useCtaRipple } from "./useCtaRipple";
 import { requestQuiz } from "../quizStore";
+import {
+  type RiskAnalysis,
+  type SequenceInput,
+  generateRiskAnalysis,
+} from "../lib/sequenceAi";
 
 const SECTIONS = [
   {
     id: "bien",
     num: "01",
-    emoji: "✅",
+    emoji: "OK",
     label: "Ce que l'IA fait bien ici",
     color: "#1da82a",
     colorBg: "#edfaee",
     colorBorder: "rgba(29,168,42,0.25)",
     body: [
-      "Tu travailles sur des notions qui demandent une vraie progression cognitive. C'est là que l'IA est la plus utile : décomposer une séquence en étapes cohérentes, identifier les jalons, formuler les questions à se poser avant de construire.",
-      "Elle peut aussi proposer des variantes d'activités ou d'évaluation selon les profils d'élèves.",
-      "Ce qu'elle ne fait pas : connaître ta classe. Le rythme réel de tes élèves, les blocages que tu as déjà repérés, les séances qui ont moins bien fonctionné — c'est toi qui portes ces informations. Plus tu les mets dans le prompt, plus la structure proposée sera pertinente. Moins tu le fais, plus tu devras corriger en sortie.",
+      "Tu travailles sur des notions qui demandent une vraie progression cognitive. C'est la que l'IA est la plus utile : decomposer une sequence en etapes coherentes, identifier les jalons, formuler les questions a se poser avant de construire.",
+      "Elle peut aussi proposer des variantes d'activites ou d'evaluation selon les profils d'eleves.",
+      "Ce qu'elle ne fait pas : connaitre ta classe. Le rythme reel de tes eleves, les blocages deja observes, les seances qui ont moins bien fonctionne, c'est toi qui portes ces informations.",
     ],
     highlight: "Plus tu contextualises, moins tu corriges en sortie.",
   },
   {
     id: "limites",
     num: "02",
-    emoji: "⚠️",
-    label: "Ce qu'elle ne peut pas faire à ta place",
+    emoji: "ALERTE",
+    label: "Ce qu'elle ne peut pas faire a ta place",
     color: "#ffd41d",
     colorBg: "#fffce6",
     colorBorder: "rgba(255,212,29,0.3)",
     body: [
-      "L'IA ne connaît pas ton programme tel que tu l'as réellement avancé cette année. Vérifie toujours que la structure proposée correspond à ce que ta classe a déjà travaillé, pas seulement aux attendus officiels.",
-      "Elle peut proposer une évaluation finale bien construite sur le papier mais inadaptée au niveau réel de tes élèves. La validation des critères de réussite reste entièrement de ton côté.",
+      "L'IA ne connait pas ton programme tel qu'il a reellement avance cette annee. Verifie toujours que la structure proposee correspond a ce que ta classe a deja travaille, pas seulement aux attendus officiels.",
+      "Elle peut proposer une evaluation finale bien construite sur le papier mais inadaptée au niveau reel de tes eleves. La validation des criteres de reussite reste entierement de ton cote.",
     ],
-    highlight: "L'IA produit un cadre — toi tu valides la cohérence.",
+    highlight: "L'IA produit un cadre, toi tu valides la coherence.",
   },
   {
     id: "verifier",
     num: "03",
-    emoji: "🔍",
-    label: "Ce qu'il reste impératif de vérifier",
+    emoji: "CHECK",
+    label: "Ce qu'il reste imperatif de verifier",
     color: "#ff33ad",
     colorBg: "#fff0fa",
     colorBorder: "rgba(255,51,173,0.25)",
     body: [
-      "Une structure générée rapidement peut donner l'impression d'une séquence aboutie. Le risque est de passer trop vite à la production de supports sans avoir vraiment questionné la logique de progression.",
-      "C'est précisément la partie la plus difficile à déléguer.",
+      "Une structure generee rapidement peut donner l'impression d'une sequence aboutie. Le risque est de passer trop vite a la production de supports sans avoir vraiment questionne la logique de progression.",
+      "C'est precisement la partie la plus difficile a deleguer.",
     ],
-    highlight: "La progression pédagogique reste ton travail, pas le sien.",
+    highlight: "La progression pedagogique reste ton travail, pas le sien.",
   },
 ];
+
+const FALLBACK_RISK_ANALYSIS: RiskAnalysis = {
+  title: "2 risques a surveiller",
+  risks: [
+    {
+      title: "Progression trop generique",
+      detail:
+        "Sans assez de contexte, l'IA peut proposer une progression propre en apparence mais insuffisamment ancree dans la realite de la classe.",
+    },
+    {
+      title: "Charge de seance mal calibree",
+      detail:
+        "Le rythme, la densite et l'ambition des seances doivent toujours etre verifies par rapport au temps reel et au niveau observe.",
+    },
+  ],
+};
 
 export default function Screen3() {
   const navigate = useNavigate();
   const { triggerRipple, RippleLayer } = useCtaRipple();
   const [read, setRead] = useState<string[]>([]);
+  const [riskAnalysis, setRiskAnalysis] = useState<RiskAnalysis | null>(null);
+  const [isLoadingRisk, setIsLoadingRisk] = useState(true);
 
-  const markRead = (id: string) => setRead((prev) => prev.includes(id) ? prev : [...prev, id]);
+  const markRead = (id: string) =>
+    setRead((prev) => (prev.includes(id) ? prev : [...prev, id]));
   const allRead = read.length === SECTIONS.length;
+
+  useEffect(() => {
+    const raw = localStorage.getItem("tandem_sequence");
+    const sequence = raw ? (JSON.parse(raw) as SequenceInput) : null;
+
+    void generateRiskAnalysis(sequence)
+      .then((result) => setRiskAnalysis(result))
+      .catch(() => setRiskAnalysis(FALLBACK_RISK_ANALYSIS))
+      .finally(() => setIsLoadingRisk(false));
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col items-center px-4 py-10">
       <div className="w-full max-w-2xl">
-
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -14 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
           <div
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
-            style={{ border: "1px solid rgba(255,51,173,0.25)", background: "#fff0fa", color: "#ff33ad", fontSize: 11, fontFamily: "monospace", letterSpacing: 2 }}
+            style={{
+              border: "1px solid rgba(255,51,173,0.25)",
+              background: "#fff0fa",
+              color: "#ff33ad",
+              fontSize: 11,
+              fontFamily: "monospace",
+              letterSpacing: 2,
+            }}
           >
-            <BookMarked size={11} /> FICHE MÉMO — CDI · SALLE 03/07
+            <BookMarked size={11} /> FICHE MEMO - SALLE 03/04
           </div>
           <h1 style={{ color: "#1A1208", fontSize: "clamp(20px,3.5vw,30px)", fontWeight: 800 }}>
-            L'IA dans ta pratique :{" "}
-            <span style={{ color: "#ff33ad" }}>ce qu'il faut savoir</span>
+            L'IA dans ta pratique : <span style={{ color: "#ff33ad" }}>ce qu'il faut savoir</span>
           </h1>
           <p style={{ color: "#9C8B76", marginTop: 6, fontSize: 13 }}>
-            Lis chaque section et marque-la comme lue pour continuer.
+            On combine rappel methodologique et lecture IA personnalisee de ton
+            cas.
           </p>
+        </motion.div>
 
-          {/* Progress dots */}
-          <div className="flex items-center justify-center gap-2 mt-5">
-            {SECTIONS.map((s) => {
-              const done = read.includes(s.id);
-              return (
-                <motion.div
-                  key={s.id}
-                  animate={done ? { scale: [1, 1.35, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                  className="w-7 h-7 rounded-full flex items-center justify-center"
-                  style={{
-                    background: done ? s.color : "#F9F4EE",
-                    border: `1.5px solid ${done ? s.color : "rgba(0,0,0,0.08)"}`,
-                    fontSize: 10,
-                    color: done ? "#fff" : "#C4B8AE",
-                    fontFamily: "monospace",
-                    fontWeight: 700,
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  {done ? "✓" : s.num}
-                </motion.div>
-              );
-            })}
-            <div style={{ color: "#C4B8AE", fontSize: 10, fontFamily: "monospace", marginLeft: 4 }}>
-              {read.length}/{SECTIONS.length}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl overflow-hidden mb-6"
+          style={{
+            background: "#FFFFFF",
+            borderLeft: "1px solid rgba(29,168,42,0.25)",
+            borderRight: "1px solid rgba(29,168,42,0.25)",
+            borderBottom: "1px solid rgba(29,168,42,0.25)",
+            borderTop: "3px solid #1da82a",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+          }}
+        >
+          <div
+            className="flex items-center gap-3 px-5 py-4"
+            style={{
+              borderBottom: "1px solid rgba(29,168,42,0.15)",
+              background: "#edfaee",
+            }}
+          >
+            {isLoadingRisk ? (
+              <LoaderCircle size={18} style={{ color: "#1da82a" }} className="animate-spin" />
+            ) : (
+              <Sparkles size={18} style={{ color: "#1da82a" }} />
+            )}
+            <div className="flex-1">
+              <div style={{ color: "#1da82a", fontSize: 9, fontFamily: "monospace", letterSpacing: 2, fontWeight: 700 }}>
+                ANALYSE IA PERSONNALISEE
+              </div>
+              <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 15 }}>
+                {riskAnalysis?.title || "Analyse en cours"}
+              </div>
             </div>
+          </div>
+
+          <div className="p-5">
+            {isLoadingRisk ? (
+              <p style={{ color: "#4A3D30", fontSize: 13.5, lineHeight: 1.7 }}>
+                L'IA relit tes reponses pour identifier les fragilites
+                pedagogiques probables avant la generation finale.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {(riskAnalysis ?? FALLBACK_RISK_ANALYSIS).risks.map((risk, index) => (
+                  <div
+                    key={`${risk.title}-${index}`}
+                    className="rounded-xl p-4"
+                    style={{
+                      background: "#F9F4EE",
+                      border: "1px solid rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#1da82a",
+                        fontSize: 10,
+                        fontFamily: "monospace",
+                        letterSpacing: 1.5,
+                        marginBottom: 6,
+                      }}
+                    >
+                      RISQUE {index + 1}
+                    </div>
+                    <div style={{ color: "#1A1208", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>
+                      {risk.title}
+                    </div>
+                    <p style={{ color: "#4A3D30", fontSize: 13, lineHeight: 1.65 }}>
+                      {risk.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
 
-        {/* Section cards */}
         <div className="space-y-4 mb-8">
           {SECTIONS.map((s, i) => {
             const isDone = read.includes(s.id);
@@ -130,7 +219,6 @@ export default function Screen3() {
                   transition: "all 0.35s ease",
                 }}
               >
-                {/* Card header */}
                 <div
                   className="flex items-center gap-3 px-5 py-4"
                   style={{ borderBottom: `1px solid ${s.colorBorder}`, background: s.colorBg }}
@@ -154,7 +242,6 @@ export default function Screen3() {
                   )}
                 </div>
 
-                {/* Body */}
                 <div className="p-5 space-y-3">
                   {s.body.map((para, j) => (
                     <motion.p
@@ -168,7 +255,6 @@ export default function Screen3() {
                     </motion.p>
                   ))}
 
-                  {/* Highlight pill */}
                   <div
                     className="flex items-center gap-2 mt-2 px-4 py-2.5 rounded-xl"
                     style={{ background: "#FFFFFF", border: `1px solid ${s.colorBorder}` }}
@@ -177,7 +263,6 @@ export default function Screen3() {
                     <span style={{ color: s.color, fontSize: 12, fontWeight: 600, fontStyle: "italic" }}>{s.highlight}</span>
                   </div>
 
-                  {/* Mark as read */}
                   <AnimatePresence>
                     {!isDone && (
                       <motion.button
@@ -197,7 +282,7 @@ export default function Screen3() {
                           cursor: "pointer",
                         }}
                       >
-                        ✓ Pris en compte — section suivante
+                        ✓ Pris en compte - section suivante
                       </motion.button>
                     )}
                   </AnimatePresence>
@@ -207,7 +292,6 @@ export default function Screen3() {
           })}
         </div>
 
-        {/* CTA */}
         <div className="flex justify-center">
           <motion.button
             onClick={(e) => {
@@ -236,10 +320,7 @@ export default function Screen3() {
               <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.25) 50%,transparent 60%)", animation: "shimmer 2s linear infinite" }} />
             )}
             <RippleLayer />
-            {allRead
-              ? <><span>✓</span> CAS PRATIQUES <ChevronRight size={18} /></>
-              : `📖 LIRE ENCORE ${SECTIONS.length - read.length} SECTION${SECTIONS.length - read.length > 1 ? "S" : ""}`
-            }
+            {allRead ? <>Voir le livrable IA <ChevronRight size={18} /></> : `Lire encore ${SECTIONS.length - read.length} section${SECTIONS.length - read.length > 1 ? "s" : ""}`}
           </motion.button>
         </div>
       </div>

@@ -12,22 +12,10 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
 import { useCtaRipple } from "./useCtaRipple";
 import { requestQuiz } from "../quizStore";
-
-const MISTRAL_API_KEY = "AtKHEFJAavv5Unaj1wopV9GXpntVMtyr";
-const MISTRAL_MODEL = "mistral-small-latest";
-
-interface FollowUpQuestion {
-  id: string;
-  label: string;
-  placeholder: string;
-  reason: string;
-}
-
-interface ClarificationResponse {
-  needsMoreInfo: boolean;
-  intro: string;
-  questions: FollowUpQuestion[];
-}
+import {
+  type FollowUpQuestion,
+  requestClarifyingQuestions,
+} from "../lib/sequenceAi";
 
 const QUESTIONS = [
   {
@@ -36,14 +24,34 @@ const QUESTIONS = [
     label:
       "Quel sujet veux-tu travailler, et qu'aimerais-tu que tes eleves sachent faire a la fin ?",
     tooltip:
-      "Mets a la fois la notion / le chapitre vise et la competence finale attendue. C'est le bloc central du cadrage.",
+      "Mets la notion, le chapitre ou le probleme vise, puis la competence finale attendue.",
+    color: "#1da82a",
+    colorBg: "#edfaee",
+    colorBorder: "rgba(29,168,42,0.25)",
+  },
+  {
+    id: "discipline",
+    code: "Q.02",
+    label: "Dans quelle discipline travailles-tu ?",
+    tooltip:
+      "Cette information evite une structure trop generique et aide a cadrer les activites.",
+    color: "#ff33ad",
+    colorBg: "#fff0fa",
+    colorBorder: "rgba(255,51,173,0.25)",
+  },
+  {
+    id: "niveau",
+    code: "Q.03",
+    label: "Pour quel niveau ou quelle classe prevois-tu cette sequence ?",
+    tooltip:
+      "Le niveau conditionne le rythme, le type d'activite, le guidage et l'evaluation.",
     color: "#1da82a",
     colorBg: "#edfaee",
     colorBorder: "rgba(29,168,42,0.25)",
   },
   {
     id: "seances",
-    code: "Q.02",
+    code: "Q.04",
     label: "De combien de seances disposes-tu ?",
     tooltip:
       "Permet d'adapter la profondeur, le rythme et le decoupage de la sequence.",
@@ -53,7 +61,7 @@ const QUESTIONS = [
   },
   {
     id: "acquis",
-    code: "Q.03",
+    code: "Q.05",
     label:
       "Qu'est-ce que tes eleves ont deja vu, compris ou pratique en lien avec ce sujet ?",
     tooltip:
@@ -63,142 +71,6 @@ const QUESTIONS = [
     colorBorder: "rgba(255,51,173,0.25)",
   },
 ];
-
-function readMessageText(content: unknown): string {
-  if (typeof content === "string") return content;
-
-  if (Array.isArray(content)) {
-    return content
-      .map((item) => {
-        if (typeof item === "string") return item;
-        if (item && typeof item === "object" && "text" in item) {
-          const text = (item as { text?: unknown }).text;
-          return typeof text === "string" ? text : "";
-        }
-        return "";
-      })
-      .join("");
-  }
-
-  return "";
-}
-
-function normalizeFollowUpResponse(payload: unknown): ClarificationResponse {
-  if (!payload || typeof payload !== "object") {
-    return {
-      needsMoreInfo: false,
-      intro: "",
-      questions: [],
-    };
-  }
-
-  const data = payload as Record<string, unknown>;
-  const rawQuestions = Array.isArray(data.questions) ? data.questions : [];
-  const questions = rawQuestions
-    .map((item, index) => {
-      if (!item || typeof item !== "object") return null;
-      const question = item as Record<string, unknown>;
-      const label =
-        typeof question.label === "string" ? question.label.trim() : "";
-      if (!label) return null;
-      return {
-        id:
-          typeof question.id === "string" && question.id.trim()
-            ? question.id.trim()
-            : `follow_up_${index + 1}`,
-        label,
-        placeholder:
-          typeof question.placeholder === "string" &&
-          question.placeholder.trim()
-            ? question.placeholder.trim()
-            : "Precise ta reponse...",
-        reason:
-          typeof question.reason === "string" && question.reason.trim()
-            ? question.reason.trim()
-            : "Precision utile pour fiabiliser la proposition.",
-      };
-    })
-    .filter(Boolean) as FollowUpQuestion[];
-
-  return {
-    needsMoreInfo:
-      Boolean(data.needsMoreInfo) && questions.length > 0,
-    intro:
-      typeof data.intro === "string" && data.intro.trim()
-        ? data.intro.trim()
-        : "L'IA a besoin de quelques precisions avant de proposer une structure pertinente.",
-    questions,
-  };
-}
-
-async function requestClarifyingQuestions(form: Record<string, string>) {
-  const prompt = `Tu aides un enseignant du second degre a mieux cadrer une demande pedagogique.
-
-Reponses actuelles :
-- Sujet + objectif final : ${form.objectif || "Non precise"}
-- Nombre de seances : ${form.seances || "Non precise"}
-- Acquis prealables : ${form.acquis || "Non precise"}
-
-Decide s'il manque des informations importantes pour produire ensuite une sequence pedagogique utile.
-
-Regles :
-- Ne pose pas de question redondante avec ce qui est deja ecrit.
-- Pose entre 0 et 3 questions maximum.
-- Pose seulement des questions qui changeraient reellement la qualite de la sequence finale.
-- Favorise les precisions sur : niveau de classe, discipline, contraintes fortes, type d'evaluation attendu, difficulte particuliere, heterogeneite, supports deja prevus.
-- Si les reponses sont deja suffisantes, retourne zero question.
-- Questions courtes, claires, directement repondables.
-
-Retourne uniquement un JSON valide, sans markdown, avec exactement cette structure :
-{
-  "needsMoreInfo": true,
-  "intro": "string",
-  "questions": [
-    {
-      "id": "string",
-      "label": "string",
-      "placeholder": "string",
-      "reason": "string"
-    }
-  ]
-}`;
-
-  const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${MISTRAL_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: MISTRAL_MODEL,
-      temperature: 0.3,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "Tu reponds uniquement avec du JSON valide. Aucun markdown. Aucun texte hors JSON.",
-        },
-        { role: "user", content: prompt },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Mistral a retourne ${response.status}: ${errorText || "erreur inconnue"}`,
-    );
-  }
-
-  const result = await response.json();
-  const rawContent = readMessageText(result?.choices?.[0]?.message?.content);
-  if (!rawContent) {
-    return { needsMoreInfo: false, intro: "", questions: [] };
-  }
-
-  return normalizeFollowUpResponse(JSON.parse(rawContent));
-}
 
 export default function Screen2() {
   const navigate = useNavigate();
@@ -218,7 +90,7 @@ export default function Screen2() {
   const answered = (id: string) => (form[id] ?? "").trim().length > 0;
   const allAnswered = QUESTIONS.every((q) => answered(q.id));
   const allFollowUpsAnswered =
-    followUpQuestions.length > 0 &&
+    followUpQuestions.length === 0 ||
     followUpQuestions.every(
       (question) => (followUpAnswers[question.id] ?? "").trim().length > 0,
     );
@@ -232,9 +104,7 @@ export default function Screen2() {
 
   const handleAnswer = (id: string, val: string) => {
     setForm((prev) => ({ ...prev, [id]: val }));
-    if (showFollowUpStep || followUpQuestions.length > 0) {
-      resetFollowUpStep();
-    }
+    if (showFollowUpStep || followUpQuestions.length > 0) resetFollowUpStep();
   };
 
   const handleNext = (i: number) => {
@@ -242,16 +112,17 @@ export default function Screen2() {
   };
 
   const saveSequenceAndContinue = () => {
-    const sequencePayload = {
-      ...form,
-      aiClarifications: followUpQuestions.map((question) => ({
-        question: question.label,
-        answer: followUpAnswers[question.id] ?? "",
-        reason: question.reason,
-      })),
-    };
-
-    localStorage.setItem("tandem_sequence", JSON.stringify(sequencePayload));
+    localStorage.setItem(
+      "tandem_sequence",
+      JSON.stringify({
+        ...form,
+        aiClarifications: followUpQuestions.map((question) => ({
+          question: question.label,
+          answer: followUpAnswers[question.id] ?? "",
+          reason: question.reason,
+        })),
+      }),
+    );
     requestQuiz(2, () => navigate("/step/3"));
   };
 
@@ -265,18 +136,14 @@ export default function Screen2() {
     }
 
     setIsAiChecking(true);
-
     try {
       const clarification = await requestClarifyingQuestions(form);
-
       if (!clarification.needsMoreInfo || clarification.questions.length === 0) {
         saveSequenceAndContinue();
         return;
       }
-
       setFollowUpIntro(clarification.intro);
       setFollowUpQuestions(clarification.questions);
-      setFollowUpAnswers({});
       setShowFollowUpStep(true);
     } catch {
       saveSequenceAndContinue();
@@ -304,7 +171,7 @@ export default function Screen2() {
               letterSpacing: 2,
             }}
           >
-            <FileQuestion size={10} /> QUESTIONNAIRE STRUCTURANT - 3 QUESTIONS
+            <FileQuestion size={10} /> QUESTIONNAIRE STRUCTURANT - 5 QUESTIONS
           </div>
           <h1
             style={{
@@ -317,11 +184,11 @@ export default function Screen2() {
             Informations <span style={{ color: "#1da82a" }}>essentielles</span>
           </h1>
           <p style={{ color: "#9C8B76", marginTop: 6, fontSize: 13 }}>
-            L'IA part de 3 reponses de base, puis ajoute des questions seulement
-            si elle detecte un manque de precision utile.
+            On verrouille les bases, puis l'IA ne pose des questions
+            supplementaires que si elles apportent une vraie valeur.
           </p>
 
-          <div className="flex items-center justify-center gap-2 mt-5">
+          <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
             {QUESTIONS.map((q, i) => (
               <motion.button
                 key={q.id}
@@ -358,7 +225,7 @@ export default function Screen2() {
                 key={q.id}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.07 }}
+                transition={{ delay: i * 0.06 }}
                 className="rounded-xl overflow-hidden relative"
                 style={{
                   border: `1px solid ${
@@ -458,15 +325,6 @@ export default function Screen2() {
                       </div>
                     )}
                   </div>
-
-                  {isDone && !isActive && (
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center"
-                      style={{ background: q.color }}
-                    >
-                      <CheckCircle size={14} style={{ color: "#FFFFFF" }} />
-                    </div>
-                  )}
                 </button>
 
                 <AnimatePresence>
@@ -484,7 +342,7 @@ export default function Screen2() {
                           value={form[q.id] ?? ""}
                           onChange={(e) => handleAnswer(q.id, e.target.value)}
                           placeholder="Votre reponse..."
-                          rows={3}
+                          rows={q.id === "objectif" ? 4 : 3}
                           className="w-full rounded-xl px-4 py-3 outline-none resize-none"
                           style={{
                             background: "#F9F4EE",
@@ -558,10 +416,10 @@ export default function Screen2() {
                       letterSpacing: 2,
                     }}
                   >
-                    COUCHE IA DE CLARIFICATION
+                    COUCHE IA DE PRECISION
                   </div>
                   <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 15 }}>
-                    L'IA veut verrouiller quelques precisions avant de continuer
+                    L'IA pousse le cadrage un cran plus loin
                   </div>
                 </div>
               </div>
@@ -637,14 +495,10 @@ export default function Screen2() {
               void handleContinue();
             }}
             whileHover={
-              allAnswered && !isAiChecking
-                ? { scale: 1.04 }
-                : {}
+              allAnswered && !isAiChecking ? { scale: 1.04 } : {}
             }
             whileTap={
-              allAnswered && !isAiChecking
-                ? { scale: 0.97 }
-                : {}
+              allAnswered && !isAiChecking ? { scale: 0.97 } : {}
             }
             className="px-10 py-4 rounded-xl flex items-center gap-3 transition-all duration-300 relative overflow-hidden"
             style={{
@@ -680,29 +534,18 @@ export default function Screen2() {
             {isAiChecking ? (
               <>
                 <LoaderCircle size={18} className="animate-spin" />
-                L'IA VERIFIE SI ELLE A BESOIN DE PRECISIONS
+                L'IA VERIFIE LES PREFERENCES UTILES
               </>
             ) : showFollowUpStep ? (
               <>
                 <Sparkles size={18} />
-                {allFollowUpsAnswered
-                  ? "VALIDER CES PRECISIONS"
-                  : `COMPLETER ${followUpQuestions.filter(
-                      (question) =>
-                        !(followUpAnswers[question.id] ?? "").trim(),
-                    ).length} PRECISION${
-                      followUpQuestions.filter(
-                        (question) =>
-                          !(followUpAnswers[question.id] ?? "").trim(),
-                      ).length > 1
-                        ? "S"
-                        : ""
-                    }`}
+                {allFollowUpsAnswered ? "VALIDER CES PRECISIONS" : "COMPLETER LES PRECISIONS IA"}
                 <ChevronRight size={18} />
               </>
             ) : allAnswered ? (
               <>
-                <CheckCircle size={18} /> LANCER LA COUCHE IA
+                <CheckCircle size={18} />
+                LANCER LA COUCHE IA
                 <ChevronRight size={18} />
               </>
             ) : (
