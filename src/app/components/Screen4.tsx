@@ -23,9 +23,13 @@ const GENERATED_SEQUENCE_KEY = "tandem_generated_sequence";
 
 interface SequenceInput {
   objectif?: string;
-  chapitre?: string;
   seances?: string;
   acquis?: string;
+  aiClarifications?: Array<{
+    question: string;
+    answer: string;
+    reason?: string;
+  }>;
 }
 
 interface GeneratedSession {
@@ -77,6 +81,16 @@ const FALLBACK_GENERATION: GeneratedSequence = {
 };
 
 function buildPrompt(sequence: SequenceInput | null) {
+  const clarificationBlock =
+    sequence?.aiClarifications && sequence.aiClarifications.length > 0
+      ? `\nPrecisions complementaires issues de la couche IA :\n${sequence.aiClarifications
+          .map(
+            (item) =>
+              `- ${item.question} : ${item.answer || "[A completer]"}`,
+          )
+          .join("\n")}\n`
+      : "";
+
   if (!sequence) {
     return `Tu es un assistant pedagogique expert en ingenierie de formation pour le second degre.
 
@@ -98,17 +112,15 @@ Format souhaite : liste structuree avec titres, sous-titres et puces. Concis et 
 
 Je veux structurer une sequence pedagogique avec les elements suivants :
 
-Objectif final de la sequence :
+Sujet, contexte et objectif final de la sequence :
 ${sequence.objectif || "[A completer]"}
-
-Chapitre / Notion a travailler :
-${sequence.chapitre || "[A completer]"}
 
 Nombre de seances disponibles :
 ${sequence.seances || "[A completer]"}
 
 Acquis prealables des eleves sur ce sujet :
 ${sequence.acquis || "[A completer]"}
+${clarificationBlock}
 
 Aide-moi a :
 1. Decomposer ce sujet en etapes pedagogiques coherentes adaptees au nombre de seances
@@ -123,13 +135,23 @@ Format souhaite : liste structuree avec titres, sous-titres et puces. Concis et 
 }
 
 function buildGenerationRequest(sequence: SequenceInput | null) {
+  const clarificationBlock =
+    sequence?.aiClarifications && sequence.aiClarifications.length > 0
+      ? `\nPrecisions complementaires obtenues ensuite :\n${sequence.aiClarifications
+          .map(
+            (item) =>
+              `- ${item.question} : ${item.answer || "Non precise"}`,
+          )
+          .join("\n")}`
+      : "\nPrecisions complementaires obtenues ensuite : aucune.";
+
   return `Tu es un assistant pedagogique expert en ingenierie de formation pour le second degre en France.
 
 Contexte enseignant :
-- Objectif final : ${sequence?.objectif || "Non precise"}
-- Chapitre / notion : ${sequence?.chapitre || "Non precise"}
+- Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}
 - Nombre de seances disponibles : ${sequence?.seances || "Non precise"}
 - Acquis prealables : ${sequence?.acquis || "Non precise"}
+${clarificationBlock}
 
 Retourne uniquement un JSON valide, sans markdown, sans texte avant ou apres, avec exactement cette structure :
 {
@@ -168,7 +190,7 @@ function getReflexSheet() {
       {
         icon: "Prompt",
         label: "Ce que vous mettez dans le prompt",
-        text: "Precisez l'objectif final, le chapitre/notion exact, le nombre de seances et les acquis prealables. Plus c'est contextualise, plus la proposition sera pertinente et moins vous corrigerez en sortie.",
+        text: "Precisez le sujet, l'objectif final, le nombre de seances, les acquis prealables et toute contrainte forte. Plus c'est contextualise, plus la proposition sera pertinente et moins vous corrigerez en sortie.",
       },
       {
         icon: "Controle",
@@ -353,16 +375,27 @@ function formatSequenceForDownload(
   generated: GeneratedSequence,
   prompt: string,
 ) {
+  const clarificationLines =
+    sequence?.aiClarifications && sequence.aiClarifications.length > 0
+      ? [
+          "",
+          "Precisions complementaires issues de la couche IA",
+          ...sequence.aiClarifications.map(
+            (item) => `- ${item.question}: ${item.answer || "Non precise"}`,
+          ),
+        ]
+      : [];
+
   const lines = [
     generated.title,
     "",
     generated.overview,
     "",
     "Contexte enseignant",
-    `- Objectif final: ${sequence?.objectif || "Non precise"}`,
-    `- Chapitre / notion: ${sequence?.chapitre || "Non precise"}`,
+    `- Sujet, contexte et objectif final: ${sequence?.objectif || "Non precise"}`,
     `- Nombre de seances: ${sequence?.seances || "Non precise"}`,
     `- Acquis prealables: ${sequence?.acquis || "Non precise"}`,
+    ...clarificationLines,
     "",
     "Proposition de sequence",
     ...generated.sessions.flatMap((session, index) => [
@@ -422,6 +455,12 @@ function buildPdf(
     page: [255, 248, 240] as [number, number, number],
     white: [255, 255, 255] as [number, number, number],
   };
+  const clarificationSummary =
+    sequence?.aiClarifications && sequence.aiClarifications.length > 0
+      ? sequence.aiClarifications
+          .map((item) => `${item.question} : ${item.answer}`)
+          .join(" · ")
+      : "Aucune precision supplementaire ajoutee par l'IA.";
 
   const ensureSpace = (needed = 24) => {
     if (y + needed > pageHeight - bottomMargin) {
@@ -571,8 +610,8 @@ function buildPdf(
     marginX + cardWidth + gap,
     y,
     cardWidth,
-    "Chapitre / notion",
-    sequence?.chapitre || "Non precise",
+    "Precisions IA",
+    clarificationSummary,
     colors.yellowSoft,
     colors.yellow,
   );
