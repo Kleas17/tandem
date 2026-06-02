@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import {
@@ -23,17 +23,22 @@ import {
   buildEvaluationPrompt,
   buildPrompt,
   FALLBACK_EVALUATION_KIT,
+  FALLBACK_EVALUATION_PROMPT_DETAILS,
   FALLBACK_GENERATION,
+  FALLBACK_SEQUENCE_PROMPT_DETAILS,
   FALLBACK_RECOMMENDATION,
+  generateEvaluationPromptDetails,
   generateEvaluationKit,
   generateRecommendationSummary,
   generateSelfCheck,
   generateSequence,
+  generateSequencePromptDetails,
   refineSequence,
   refineSequenceWithInstruction,
   type ChatRefinementResult,
   type EvaluationKit,
   type GeneratedSequence,
+  type PromptDetails,
   type RecommendationSummary,
   type SequenceInput,
 } from "../lib/sequenceAi";
@@ -47,6 +52,16 @@ interface FinalKitState {
   sequence: GeneratedSequence;
   evaluationKit: EvaluationKit;
 }
+
+interface PromptModalCache {
+  sequence: PromptDetails | null;
+  evaluation: PromptDetails | null;
+}
+
+type PromptModalState = {
+  kind: "sequence" | "evaluation";
+  source: "ai" | "generic";
+} | null;
 
 function getReflexSheetSequence() {
   return {
@@ -198,7 +213,7 @@ function buildPdfDoc(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...colors.muted);
-  doc.text("TANDEM · LIVRABLE PERSONNALISE", marginX + 24, y + 24);
+  doc.text("TANDEM Â· LIVRABLE PERSONNALISE", marginX + 24, y + 24);
   doc.setFontSize(20);
   doc.setTextColor(...colors.ink);
   doc.text(title, marginX + 24, y + 48);
@@ -217,7 +232,7 @@ function buildPdfDoc(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...colors.muted);
-    doc.text(`TANDEM · Y-Days 2026 · Page ${page}/${pageCount}`, marginX, pageHeight - 16);
+    doc.text(`TANDEM Â· Y-Days 2026 Â· Page ${page}/${pageCount}`, marginX, pageHeight - 16);
   }
 
   return doc;
@@ -292,13 +307,21 @@ export default function Screen4() {
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(8);
   const [error, setError] = useState<string | null>(null);
-  const [copiedPrompt, setCopiedPrompt] = useState<"sequence" | "evaluation" | null>(null);
+  const [copiedModalPrompt, setCopiedModalPrompt] = useState(false);
   const [refiningMode, setRefiningMode] = useState<RefineMode | null>(null);
+  const [promptModal, setPromptModal] = useState<PromptModalState>(null);
+  const [promptModalCache, setPromptModalCache] = useState<PromptModalCache>({
+    sequence: null,
+    evaluation: null,
+  });
+  const [promptModalLoading, setPromptModalLoading] = useState(false);
+  const [promptModalError, setPromptModalError] = useState<string | null>(null);
+  const [showPendingInstructionHint, setShowPendingInstructionHint] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     {
       role: "assistant",
       content:
-        "Donne une consigne de modification. Je peux soit valider la demande, soit te poser une question avant régénération.",
+        "Donne moi une consigne de modification. Je peux soit valider la demande, soit te poser une question avant rÃ©gÃ©nÃ©ration.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -318,6 +341,40 @@ export default function Screen4() {
   const evaluationReflex = getReflexSheetEvaluation();
   const sequencePrompt = useMemo(() => buildPrompt(sequence), [sequence]);
   const evaluationPrompt = useMemo(() => buildEvaluationPrompt(sequence), [sequence]);
+  const activePromptDetails =
+    promptModal?.kind === "sequence"
+      ? promptModalCache.sequence
+      : promptModal?.kind === "evaluation"
+        ? promptModalCache.evaluation
+        : null;
+  const modalPromptText =
+    promptModal?.source === "generic"
+      ? promptModal?.kind === "sequence"
+        ? sequencePrompt
+        : evaluationPrompt
+      : activePromptDetails?.prompt ?? "";
+  const modalPromptWhy =
+    promptModal?.source === "generic" ? "" : activePromptDetails?.whyGood ?? "";
+  const modalPromptAdditions =
+    promptModal?.source === "generic" ? [] : activePromptDetails?.additions ?? [];
+  const modalPromptLabel =
+    promptModal?.kind === "sequence"
+      ? "Cas 1 - Structurer une sÃ©quence"
+      : "Cas 2 - DiffÃ©rencier une Ã©valuation";
+  const genericPromptWhy =
+    promptModal?.kind === "sequence"
+      ? "Ce prompt gÃ©nÃ©rique donne une base stable pour dÃ©marrer, mÃªme sans personnalisation forte."
+      : "Ce prompt gÃ©nÃ©rique donne une base stable pour explorer la diffÃ©renciation d'une Ã©valuation.";
+  const genericPromptAdditions =
+    promptModal?.kind === "sequence"
+      ? [
+          "PrÃ©ciser le niveau rÃ©el de la classe et ses Ã©carts de maÃ®trise.",
+          "Ajouter une contrainte de temps, de support ou de modalitÃ© de travail.",
+        ]
+      : [
+          "PrÃ©ciser la compÃ©tence exacte Ã  Ã©valuer.",
+          "Ajouter les formes d'hÃ©tÃ©rogÃ©nÃ©itÃ© observÃ©es dans la classe.",
+        ];
 
   const runGeneration = async (force = false) => {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -415,29 +472,86 @@ export default function Screen4() {
     });
   }, [chatMessages, chatLoading]);
 
-  const copyPrompt = (kind: "sequence" | "evaluation") => {
-    const value = kind === "sequence" ? sequencePrompt : evaluationPrompt;
-    navigator.clipboard.writeText(value).then(() => {
-      setCopiedPrompt(kind);
-      setTimeout(() => setCopiedPrompt(null), 2500);
-      toast.success("Prompt copié");
+  useEffect(() => {
+    if (!promptModal || promptModal.source !== "ai" || !kit) return;
+
+    const cacheHit =
+      promptModal.kind === "sequence"
+        ? promptModalCache.sequence
+        : promptModalCache.evaluation;
+    if (cacheHit) return;
+
+    let cancelled = false;
+    setPromptModalLoading(true);
+    setPromptModalError(null);
+
+    const loadPrompt = async () => {
+      try {
+        const details =
+          promptModal.kind === "sequence"
+            ? await generateSequencePromptDetails(sequence, kit.sequence)
+            : await generateEvaluationPromptDetails(sequence, kit.evaluationKit);
+        if (cancelled) return;
+        setPromptModalCache((current) => ({
+          ...current,
+          [promptModal.kind]: details,
+        }));
+      } catch {
+        if (cancelled) return;
+        const fallback =
+          promptModal.kind === "sequence"
+            ? FALLBACK_SEQUENCE_PROMPT_DETAILS
+            : FALLBACK_EVALUATION_PROMPT_DETAILS;
+        setPromptModalCache((current) => ({
+          ...current,
+          [promptModal.kind]: fallback,
+        }));
+        setPromptModalError("Impossible de gÃ©nÃ©rer le prompt IA pour le moment.");
+      } finally {
+        if (!cancelled) {
+          setPromptModalLoading(false);
+        }
+      }
+    };
+
+    void loadPrompt();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [kit, promptModal, promptModalCache.evaluation, promptModalCache.sequence, sequence]);
+
+  const copyModalPrompt = () => {
+    if (!modalPromptText) return;
+    navigator.clipboard.writeText(modalPromptText).then(() => {
+      setCopiedModalPrompt(true);
+      setTimeout(() => setCopiedModalPrompt(false), 2000);
+      toast.success("Prompt copiÃ©");
     });
   };
 
   const downloadSequencePdf = () => {
     if (!kit) return;
-    buildSequencePdf(sequence, kit.sequence, sequencePrompt).save(
+    buildSequencePdf(
+      sequence,
+      kit.sequence,
+      promptModalCache.sequence?.prompt || sequencePrompt,
+    ).save(
       "tandem-fiche-sequence.pdf",
     );
-    toast.success("Fiche séquence téléchargée");
+    toast.success("Fiche sÃ©quence tÃ©lÃ©chargÃ©e");
   };
 
   const downloadEvaluationPdf = () => {
     if (!kit) return;
-    buildEvaluationPdf(sequence, kit.evaluationKit, evaluationPrompt).save(
+    buildEvaluationPdf(
+      sequence,
+      kit.evaluationKit,
+      promptModalCache.evaluation?.prompt || evaluationPrompt,
+    ).save(
       "tandem-fiche-evaluation.pdf",
     );
-    toast.success("Fiche évaluation téléchargée");
+    toast.success("Fiche Ã©valuation tÃ©lÃ©chargÃ©e");
   };
 
   const handleShare = () => {
@@ -448,7 +562,7 @@ export default function Screen4() {
       });
     } else {
       navigator.clipboard.writeText(window.location.origin);
-      toast.success("Lien copié");
+      toast.success("Lien copiÃ©");
     }
   };
 
@@ -467,7 +581,7 @@ export default function Screen4() {
         GENERATED_KIT_KEY,
         JSON.stringify({ cacheKey: JSON.stringify(sequence || {}), data: nextKit }),
       );
-      toast.success("Proposition de séquence affinée");
+      toast.success("Proposition de sÃ©quence affinÃ©e");
     } catch {
       toast.error("Impossible d'affiner la proposition");
     } finally {
@@ -533,13 +647,13 @@ export default function Screen4() {
         ...prev,
         {
           role: "assistant",
-          content: "OK, la séquence a été régénérée avec cette consigne.",
+          content: "OK, la sÃ©quence a Ã©tÃ© rÃ©gÃ©nÃ©rÃ©e avec cette consigne.",
         },
       ]);
       setPendingInstructionDraft("");
-      toast.success("Séquence régénérée depuis le chat");
+      toast.success("SÃ©quence rÃ©gÃ©nÃ©rÃ©e depuis le chat");
     } catch {
-      toast.error("Impossible de régénérer depuis la consigne libre");
+      toast.error("Impossible de rÃ©gÃ©nÃ©rer depuis la consigne libre");
     } finally {
       setChatLoading(false);
     }
@@ -570,7 +684,7 @@ export default function Screen4() {
               <LoaderCircle size={18} style={{ color: "#ffc200" }} className="animate-spin" />
               <div className="flex-1">
                 <div style={{ color: "#ffc200", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>GENERATION IA EN COURS</div>
-                <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Synthèse profil + cas séquence + cas évaluation</div>
+                <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>SynthÃ¨se profil + cas sÃ©quence + cas Ã©valuation</div>
               </div>
               <span style={{ color: "#ffc200", fontFamily: "monospace", fontSize: 12, fontWeight: 700 }}>{loadingProgress}%</span>
             </div>
@@ -584,13 +698,204 @@ export default function Screen4() {
 
         {!loading && kit && (
           <>
+            {promptModal && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
+                style={{ background: "rgba(26,18,8,0.45)" }}
+                onClick={() => setPromptModal(null)}
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="w-full max-w-3xl rounded-3xl overflow-hidden"
+                  style={{ background: "#FFFFFF", boxShadow: "0 28px 80px rgba(0,0,0,0.24)" }}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div
+                    className="flex items-center justify-between gap-4 px-5 py-4"
+                    style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", background: "#F9F4EE" }}
+                  >
+                    <div>
+                      <div style={{ color: "#9C8B76", fontSize: 10, fontFamily: "monospace", letterSpacing: 2 }}>
+                        PROMPT
+                      </div>
+                      <div style={{ color: "#1A1208", fontWeight: 800, fontSize: 16 }}>
+                        {modalPromptLabel}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPromptModal(null)}
+                      className="px-3 py-2 rounded-xl"
+                      style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", color: "#4A3D30", fontSize: 13, fontWeight: 700 }}
+                    >
+                      Fermer
+                    </button>
+                  </div>
+
+                  <div className="p-5 space-y-5 max-h-[82vh] overflow-auto">
+                    <div className="inline-flex items-center rounded-2xl p-1" style={{ background: "#F4ECE2" }}>
+                      {(["ai", "generic"] as const).map((source) => {
+                        const active = promptModal.source === source;
+                        return (
+                          <button
+                            key={source}
+                            type="button"
+                            onClick={() => {
+                              setCopiedModalPrompt(false);
+                              setPromptModalError(null);
+                              setPromptModal((current) =>
+                                current ? { ...current, source } : current,
+                              );
+                            }}
+                            className="relative px-4 py-2 rounded-xl"
+                            style={{
+                              background: active
+                                ? "linear-gradient(135deg,#ff33ad,#ff5fbe)"
+                                : "transparent",
+                              color: active ? "#FFFFFF" : "#6E5A45",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              transition: "all 180ms ease",
+                            }}
+                          >
+                            {source === "ai" ? "Prompt IA" : "Prompt gÃ©nÃ©rique"}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div
+                      className="rounded-2xl p-4"
+                      style={{
+                        background: promptModal.source === "ai" ? "#fff0fa" : "#fffce6",
+                        border:
+                          promptModal.source === "ai"
+                            ? "1px solid rgba(255,51,173,0.18)"
+                            : "1px solid rgba(255,212,29,0.28)",
+                      }}
+                    >
+                      <div
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-3"
+                        style={{
+                          background: "#FFFFFF",
+                          border: "1px solid rgba(0,0,0,0.06)",
+                          color: promptModal.source === "ai" ? "#ff33ad" : "#ffc200",
+                          fontSize: 11,
+                          fontWeight: 700,
+                        }}
+                      >
+                        <Bot size={14} />
+                        {promptModal.source === "ai"
+                          ? "Prompt gÃ©nÃ©rÃ© par l'IA selon le profil utilisateur"
+                          : "Prompt gÃ©nÃ©rique de dÃ©part"}
+                      </div>
+
+                      {promptModal.source === "ai" && promptModalLoading ? (
+                        <div
+                          className="rounded-2xl p-6 flex flex-col items-center justify-center gap-3"
+                          style={{ background: "#1A1208", color: "#FFF8F0", minHeight: 220 }}
+                        >
+                          <LoaderCircle size={24} className="animate-spin" />
+                          <div style={{ fontSize: 14, fontWeight: 700 }}>
+                            GÃ©nÃ©ration du prompt IA
+                          </div>
+                          <div style={{ fontSize: 12.5, color: "rgba(255,248,240,0.78)" }}>
+                            Le prompt se prÃ©pare Ã  partir du profil et du cas dâ€™usage.
+                          </div>
+                        </div>
+                      ) : (
+                        <pre
+                          className="rounded-2xl p-4 overflow-x-auto whitespace-pre-wrap"
+                          style={{
+                            background: "#1A1208",
+                            color: "#FFF8F0",
+                            fontSize: 13,
+                            lineHeight: 1.7,
+                            fontFamily:
+                              "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace",
+                          }}
+                        >
+                          <code>{modalPromptText}</code>
+                        </pre>
+                      )}
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
+                      <div className="rounded-2xl p-4" style={{ background: "#F9F4EE", border: "1px solid rgba(0,0,0,0.06)" }}>
+                        <div style={{ color: "#1A1208", fontWeight: 800, fontSize: 14, marginBottom: 8 }}>
+                          Pourquoi ce prompt est utile
+                        </div>
+                        <p style={{ color: "#4A3D30", fontSize: 13, lineHeight: 1.7 }}>
+                          {promptModal.source === "ai"
+                            ? promptModalLoading
+                              ? "L'IA prÃ©pare aussi l'explication du prompt."
+                              : modalPromptWhy
+                            : genericPromptWhy}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl p-4" style={{ background: "#F9F4EE", border: "1px solid rgba(0,0,0,0.06)" }}>
+                        <div style={{ color: "#1A1208", fontWeight: 800, fontSize: 14, marginBottom: 8 }}>
+                          Ce que tu peux encore ajouter
+                        </div>
+                        <div className="space-y-2">
+                          {(promptModal.source === "ai" && promptModalLoading
+                            ? ["Chargement des pistes dâ€™amÃ©lioration..."]
+                            : promptModal.source === "ai"
+                              ? modalPromptAdditions
+                              : genericPromptAdditions).map((item) => (
+                            <div key={item} className="flex items-start gap-2" style={{ color: "#4A3D30", fontSize: 13, lineHeight: 1.6 }}>
+                              <span style={{ color: "#ff33ad", marginTop: 1 }}>â€¢</span>
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {promptModalError && (
+                      <div
+                        className="rounded-2xl px-4 py-3"
+                        style={{ background: "#fff0fa", border: "1px solid rgba(255,51,173,0.18)", color: "#7B345A", fontSize: 12.5 }}
+                      >
+                        {promptModalError}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-3">
+                      <motion.button
+                        type="button"
+                        onClick={copyModalPrompt}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="px-4 py-3 rounded-xl flex items-center gap-2"
+                        style={{
+                          background: "linear-gradient(135deg,#ffd41d,#ffc200)",
+                          color: "#1A1208",
+                          fontWeight: 700,
+                          fontSize: 13,
+                          opacity: promptModal.source === "ai" && promptModalLoading ? 0.55 : 1,
+                        }}
+                        disabled={promptModal.source === "ai" && promptModalLoading}
+                      >
+                        <Copy size={16} />
+                        {copiedModalPrompt ? "Prompt copiÃ©" : "Copier le prompt"}
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
             <div className="rounded-2xl overflow-hidden mb-5" style={{ background: "#FFFFFF", borderTop: "3px solid #ff33ad", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
               <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(255,51,173,0.25)", background: "#fff0fa" }}>
                 <Bot size={18} style={{ color: "#ff33ad" }} />
                 <div className="flex-1">
                   <div style={{ color: "#ff33ad", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>CHAT DE MODIFICATION</div>
                   <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>
-                    Donne une consigne libre, puis régénère si la demande est assez claire
+                    Donne une consigne libre, puis rÃ©gÃ©nÃ¨re si la demande est assez claire
                   </div>
                 </div>
               </div>
@@ -655,7 +960,7 @@ export default function Screen4() {
                         <div style={{ color: "#9C8B76", fontSize: 10, fontFamily: "monospace", marginBottom: 6 }}>ASSISTANT</div>
                         <div className="flex items-center gap-2" style={{ color: "#1A1208", fontSize: 13 }}>
                           <LoaderCircle size={14} className="animate-spin" />
-                          <span>En train d'écrire</span>
+                          <span>En train d'Ã©crire</span>
                           <div className="flex items-center gap-1">
                             {[0, 1, 2].map((dot) => (
                               <motion.span
@@ -682,7 +987,7 @@ export default function Screen4() {
                   <textarea
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Exemple : rends la séquence plus orientée travail de groupe et ajoute une évaluation formative intermédiaire."
+                    placeholder="Exemple : rends la sÃ©quence plus orientÃ©e travail de groupe et ajoute une Ã©valuation formative intermÃ©diaire."
                     rows={3}
                     className="w-full rounded-xl px-4 py-3 outline-none resize-none"
                     style={{
@@ -713,24 +1018,57 @@ export default function Screen4() {
                     Envoyer au chat
                   </motion.button>
 
-                  <motion.button
-                    onClick={() => void handleChatRegenerate()}
-                    whileHover={!chatLoading && pendingInstructionDraft ? { scale: 1.02 } : {}}
-                    whileTap={!chatLoading && pendingInstructionDraft ? { scale: 0.98 } : {}}
-                    className="px-4 py-3 rounded-xl flex items-center gap-2"
-                    style={{
-                      background: pendingInstructionDraft
-                        ? "linear-gradient(135deg,#ffd41d,#ffc200)"
-                        : "#F9F4EE",
-                      color: pendingInstructionDraft ? "#1A1208" : "#C4B8AE",
-                      fontWeight: 700,
-                      fontSize: 13,
-                      border: pendingInstructionDraft ? "none" : "1px solid rgba(0,0,0,0.08)",
+                  <div
+                    className="relative"
+                    onMouseEnter={() => {
+                      if (!pendingInstructionDraft && !chatLoading) {
+                        setShowPendingInstructionHint(true);
+                      }
                     }}
+                    onMouseLeave={() => setShowPendingInstructionHint(false)}
                   >
-                    <RefreshCw size={15} />
-                    Régénérer avec ces infos
-                  </motion.button>
+                    {showPendingInstructionHint && !pendingInstructionDraft && !chatLoading && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        className="absolute left-1/2 -translate-x-1/2 bottom-[calc(100%+10px)] w-64 rounded-2xl px-4 py-3"
+                        style={{
+                          background: "#1A1208",
+                          color: "#FFF8F0",
+                          boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          zIndex: 10,
+                        }}
+                      >
+                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+                          L’IA a encore besoin d’informations
+                        </div>
+                        <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "rgba(255,248,240,0.82)" }}>
+                          Réponds d’abord à sa question ou précise mieux ta demande pour débloquer la régénération.
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <motion.button
+                      onClick={() => void handleChatRegenerate()}
+                      whileHover={!chatLoading && pendingInstructionDraft ? { scale: 1.02 } : {}}
+                      whileTap={!chatLoading && pendingInstructionDraft ? { scale: 0.98 } : {}}
+                      className="px-4 py-3 rounded-xl flex items-center gap-2"
+                      style={{
+                        background: pendingInstructionDraft
+                          ? "linear-gradient(135deg,#ffd41d,#ffc200)"
+                          : "#F9F4EE",
+                        color: pendingInstructionDraft ? "#1A1208" : "#C4B8AE",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        border: pendingInstructionDraft ? "none" : "1px solid rgba(0,0,0,0.08)",
+                        cursor: pendingInstructionDraft ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      <RefreshCw size={15} />
+                      Régénérer avec ces infos
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -754,7 +1092,7 @@ export default function Screen4() {
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
                     {
-                      title: "Cas 1 - Structurer une séquence",
+                      title: "Cas 1 - Structurer une sÃ©quence",
                       friction: kit.recommendation.case1Friction,
                       usage: kit.recommendation.case1Usage,
                       limit: kit.recommendation.case1Limit,
@@ -763,7 +1101,7 @@ export default function Screen4() {
                       color: "#1da82a",
                     },
                     {
-                      title: "Cas 2 - Différencier une évaluation",
+                      title: "Cas 2 - DiffÃ©rencier une Ã©valuation",
                       friction: kit.recommendation.case2Friction,
                       usage: kit.recommendation.case2Usage,
                       limit: kit.recommendation.case2Limit,
@@ -809,7 +1147,7 @@ export default function Screen4() {
                     <div className="space-y-2">
                       {kit.sequence.fragilePoints.map((item) => (
                         <div key={item} className="flex items-start gap-2" style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>
-                          <span style={{ color: "#ff33ad", marginTop: 2 }}>•</span>
+                          <span style={{ color: "#ff33ad", marginTop: 2 }}>â€¢</span>
                           <span>{item}</span>
                         </div>
                       ))}
@@ -820,9 +1158,9 @@ export default function Screen4() {
                       <Download size={16} />
                       PDF Cas 1
                     </motion.button>
-                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => copyPrompt("sequence")} className="px-4 py-3 rounded-xl flex items-center justify-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 13 }}>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setPromptModal({ kind: "sequence", source: "ai" })} className="px-4 py-3 rounded-xl flex items-center justify-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 13 }}>
                       <Copy size={16} />
-                      {copiedPrompt === "sequence" ? "Prompt copié" : "Prompt Cas 1"}
+                      Voir le prompt
                     </motion.button>
                   </div>
                 </div>
@@ -840,7 +1178,7 @@ export default function Screen4() {
                     <p style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>{kit.evaluationKit.whyUseful}</p>
                   </div>
                   {[
-                    ["Leviers de différenciation", kit.evaluationKit.differentiationLevers],
+                    ["Leviers de diffÃ©renciation", kit.evaluationKit.differentiationLevers],
                     ["Ce que l'enseignant garde en main", kit.evaluationKit.whatTeacherKeeps],
                     ["Points de vigilance", kit.evaluationKit.vigilancePoints],
                     ["Exemples de variantes", kit.evaluationKit.exampleVariants],
@@ -850,7 +1188,7 @@ export default function Screen4() {
                       <div className="space-y-2">
                         {(items as string[]).map((item) => (
                           <div key={item} className="flex items-start gap-2" style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>
-                            <span style={{ color: "#ffc200", marginTop: 2 }}>•</span>
+                            <span style={{ color: "#ffc200", marginTop: 2 }}>â€¢</span>
                             <span>{item}</span>
                           </div>
                         ))}
@@ -862,9 +1200,9 @@ export default function Screen4() {
                       <Download size={16} />
                       PDF Cas 2
                     </motion.button>
-                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => copyPrompt("evaluation")} className="px-4 py-3 rounded-xl flex items-center justify-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 13 }}>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setPromptModal({ kind: "evaluation", source: "ai" })} className="px-4 py-3 rounded-xl flex items-center justify-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 13 }}>
                       <Copy size={16} />
-                      {copiedPrompt === "evaluation" ? "Prompt copié" : "Prompt Cas 2"}
+                      Voir le prompt
                     </motion.button>
                   </div>
                 </div>
@@ -876,14 +1214,14 @@ export default function Screen4() {
                 <WandSparkles size={18} style={{ color: "#ffc200" }} />
                 <div className="flex-1">
                   <div style={{ color: "#ffc200", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>AFFINER LA PROPOSITION DU CAS 1</div>
-                  <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Demande une variante plus ciblée de la séquence</div>
+                  <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Demande une variante plus ciblÃ©e de la sÃ©quence</div>
                 </div>
               </div>
               <div className="p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                   ["concrete", "Plus concret"],
                   ["progressive", "Plus progressif"],
-                  ["differentiated", "Plus différencié"],
+                  ["differentiated", "Plus diffÃ©renciÃ©"],
                   ["shorter", "Plus court"],
                 ].map(([mode, label]) => (
                   <motion.button
@@ -929,17 +1267,17 @@ export default function Screen4() {
             <div className="grid md:grid-cols-2 gap-4 mb-6">
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleShare} className="py-4 rounded-xl flex items-center justify-center gap-3" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 14 }}>
                 <Share2 size={18} />
-                Partager ce kit avec un(e) collègue
+                Partager ce kit avec un(e) collÃ¨gue
               </motion.button>
               <motion.button onClick={() => void runGeneration(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="py-4 rounded-xl flex items-center justify-center gap-3" style={{ background: "linear-gradient(135deg,#ffd41d,#ffc200)", color: "#1A1208", fontWeight: 700, fontSize: 14 }}>
                 <RefreshCw size={18} />
-                Régénérer les 2 cas avec l'IA
+                RÃ©gÃ©nÃ©rer les 2 cas avec l'IA
               </motion.button>
             </div>
 
             <div className="flex justify-center">
               <motion.button onClick={() => navigate("/")} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="px-7 py-2.5 rounded-xl inline-flex items-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(255,212,29,0.3)", color: "#ffd41d", fontWeight: 600, fontSize: 13 }}>
-                Retour à l'accueil
+                Retour Ã  l'accueil
               </motion.button>
             </div>
           </>
@@ -949,3 +1287,4 @@ export default function Screen4() {
     </div>
   );
 }
+

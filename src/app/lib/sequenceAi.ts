@@ -40,6 +40,9 @@ export interface GeneratedSequence {
   title: string;
   overview: string;
   whyThisStructure: string;
+  aiPrompt: string;
+  promptWhyGood: string;
+  promptAdditions: string[];
   sessions: GeneratedSession[];
   firstSessionHook: string;
   checkpoints: string[];
@@ -72,6 +75,8 @@ export interface EvaluationKit {
   title: string;
   overview: string;
   whyUseful: string;
+  promptWhyGood: string;
+  promptAdditions: string[];
   differentiationLevers: string[];
   whatTeacherKeeps: string[];
   vigilancePoints: string[];
@@ -83,6 +88,12 @@ export interface ChatRefinementResult {
   status: "ready" | "need_info";
   assistantMessage: string;
   instructionDraft: string;
+}
+
+export interface PromptDetails {
+  prompt: string;
+  whyGood: string;
+  additions: string[];
 }
 
 function readMessageText(content: unknown): string {
@@ -157,6 +168,14 @@ export const FALLBACK_GENERATION: GeneratedSequence = {
     "L'IA a prepare une premiere base. Verifie la progression, le niveau reel de la classe et les contraintes de temps avant utilisation.",
   whyThisStructure:
     "La structure proposee part du contexte fourni, organise les apprentissages de facon progressive et garde des points de controle pour limiter les angles morts.",
+  aiPrompt:
+    "Aide-moi a structurer une sequence pedagogique a partir de mon sujet, de mon niveau, du nombre de seances et des acquis prealables. Propose une progression, des jalons, une accroche et des points de vigilance.",
+  promptWhyGood:
+    "Ce prompt est utile car il donne a l'IA un cadre clair, des contraintes de temps et un objectif pedagogique explicite.",
+  promptAdditions: [
+    "Ajouter une contrainte de classe specifique si necessaire.",
+    "Preciser le type d'activite souhaite si tu as deja une preference.",
+  ],
   sessions: [
     {
       title: "Seance 1 - Lancement",
@@ -211,6 +230,12 @@ export const FALLBACK_EVALUATION_KIT: EvaluationKit = {
     "L'IA peut aider a varier les consignes, les supports et le guidage a partir d'un meme sujet, sans deleguer la validation pedagogique.",
   whyUseful:
     "Ce cas d'usage est utile quand la tache repetitive de declinaison des consignes commence a peser sur le temps de preparation ou sur la qualite finale.",
+  promptWhyGood:
+    "Ce prompt est utile car il garde la competence visee stable tout en demandant des variations exploitables sur la forme, le guidage ou la difficulte.",
+  promptAdditions: [
+    "Ajouter les contraintes de notation si elles sont deja fixees.",
+    "Preciser le type d'heterogeneite observe dans la classe.",
+  ],
   differentiationLevers: [
     "Faire varier le niveau de guidage dans les consignes.",
     "Proposer plusieurs niveaux de difficultes a partir du meme sujet.",
@@ -232,6 +257,18 @@ export const FALLBACK_EVALUATION_KIT: EvaluationKit = {
   ],
   prompt:
     "A partir d'un sujet d'evaluation de base, aide-moi a proposer plusieurs niveaux de guidage et de difficulte sans changer la competence visee. Indique ce que je dois verifier avant utilisation.",
+};
+
+export const FALLBACK_SEQUENCE_PROMPT_DETAILS: PromptDetails = {
+  prompt: FALLBACK_GENERATION.aiPrompt,
+  whyGood: FALLBACK_GENERATION.promptWhyGood,
+  additions: FALLBACK_GENERATION.promptAdditions,
+};
+
+export const FALLBACK_EVALUATION_PROMPT_DETAILS: PromptDetails = {
+  prompt: FALLBACK_EVALUATION_KIT.prompt,
+  whyGood: FALLBACK_EVALUATION_KIT.promptWhyGood,
+  additions: FALLBACK_EVALUATION_KIT.promptAdditions,
 };
 
 function formatClarifications(sequence: SequenceInput | null, withAnswers = true) {
@@ -574,8 +611,7 @@ Retourne uniquement un JSON valide avec cette structure :
   "differentiationLevers": ["string"],
   "whatTeacherKeeps": ["string"],
   "vigilancePoints": ["string"],
-  "exampleVariants": ["string"],
-  "prompt": "string"
+  "exampleVariants": ["string"]
 }
 
 Regles :
@@ -583,8 +619,7 @@ Regles :
 - DifferentiationLevers : 3 a 5 leviers actionnables.
 - whatTeacherKeeps : 3 a 4 points maximum.
 - vigilancePoints : 2 a 4 points maximum.
-- exampleVariants : 2 a 4 variantes tres concretes.
-- Le prompt doit etre directement copiable.`;
+- exampleVariants : 2 a 4 variantes tres concretes.`;
 
   const payload = await callMistralJson(prompt, 0.4);
   if (!payload || typeof payload !== "object") return FALLBACK_EVALUATION_KIT;
@@ -593,6 +628,8 @@ Regles :
     title: normalizeString(data.title, FALLBACK_EVALUATION_KIT.title),
     overview: normalizeString(data.overview, FALLBACK_EVALUATION_KIT.overview),
     whyUseful: normalizeString(data.whyUseful, FALLBACK_EVALUATION_KIT.whyUseful),
+    promptWhyGood: "",
+    promptAdditions: [],
     differentiationLevers: normalizeStringArray(
       data.differentiationLevers,
       FALLBACK_EVALUATION_KIT.differentiationLevers,
@@ -609,7 +646,7 @@ Regles :
       data.exampleVariants,
       FALLBACK_EVALUATION_KIT.exampleVariants,
     ),
-    prompt: normalizeString(data.prompt, FALLBACK_EVALUATION_KIT.prompt),
+    prompt: "",
   };
 }
 
@@ -666,6 +703,85 @@ Regles :
   };
 }
 
+function normalizePromptDetails(
+  payload: unknown,
+  fallback: PromptDetails,
+  promptKey: "prompt" | "aiPrompt",
+): PromptDetails {
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+
+  const data = payload as Record<string, unknown>;
+  return {
+    prompt: normalizeString(data[promptKey], fallback.prompt),
+    whyGood: normalizeString(data.promptWhyGood, fallback.whyGood),
+    additions: normalizeStringArray(data.promptAdditions, fallback.additions),
+  };
+}
+
+export async function generateSequencePromptDetails(
+  sequence: SequenceInput | null,
+  generated: GeneratedSequence,
+) {
+  const prompt = `Tu rediges un prompt final pret a l'emploi pour aider un enseignant a structurer une sequence.
+
+Contexte enseignant :
+- Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}
+- Discipline : ${sequence?.discipline || "Non precise"}
+- Niveau / classe : ${sequence?.niveau || "Non precise"}
+- Nombre de seances disponibles : ${sequence?.seances || "Non precise"}
+- Acquis prealables : ${sequence?.acquis || "Non precise"}
+- Precisions complementaires : ${formatClarifications(sequence, true)}
+
+Proposition de sequence deja generee :
+${JSON.stringify(generated)}
+
+Retourne uniquement un JSON valide avec cette structure :
+{
+  "aiPrompt": "string",
+  "promptWhyGood": "string",
+  "promptAdditions": ["string"]
+}`;
+
+  return normalizePromptDetails(
+    await callMistralJson(prompt, 0.4),
+    FALLBACK_SEQUENCE_PROMPT_DETAILS,
+    "aiPrompt",
+  );
+}
+
+export async function generateEvaluationPromptDetails(
+  sequence: SequenceInput | null,
+  generated: EvaluationKit,
+) {
+  const prompt = `Tu rediges un prompt final pret a l'emploi pour aider un enseignant a differencier une evaluation.
+
+Contexte enseignant :
+- Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}
+- Discipline : ${sequence?.discipline || "Non precise"}
+- Niveau / classe : ${sequence?.niveau || "Non precise"}
+- Nombre de seances ou temps disponible : ${sequence?.seances || "Non precise"}
+- Acquis prealables : ${sequence?.acquis || "Non precise"}
+- Precisions complementaires : ${formatClarifications(sequence, true)}
+
+Cas d'usage deja genere :
+${JSON.stringify(generated)}
+
+Retourne uniquement un JSON valide avec cette structure :
+{
+  "prompt": "string",
+  "promptWhyGood": "string",
+  "promptAdditions": ["string"]
+}`;
+
+  return normalizePromptDetails(
+    await callMistralJson(prompt, 0.4),
+    FALLBACK_EVALUATION_PROMPT_DETAILS,
+    "prompt",
+  );
+}
+
 export async function refineSequence(
   sequence: SequenceInput | null,
   generated: GeneratedSequence,
@@ -703,6 +819,9 @@ Retourne uniquement un JSON valide avec exactement la meme structure que la prop
   "title": "string",
   "overview": "string",
   "whyThisStructure": "string",
+  "aiPrompt": "string",
+  "promptWhyGood": "string",
+  "promptAdditions": ["string"],
   "sessions": [
     {
       "title": "string",
@@ -867,6 +986,9 @@ function normalizeGeneration(payload: unknown): GeneratedSequence {
       data.whyThisStructure,
       FALLBACK_GENERATION.whyThisStructure,
     ),
+    aiPrompt: normalizeString(data.aiPrompt, ""),
+    promptWhyGood: normalizeString(data.promptWhyGood, ""),
+    promptAdditions: normalizeStringArray(data.promptAdditions, []),
     sessions: normalizeSessions(data.sessions),
     firstSessionHook: normalizeString(
       data.firstSessionHook,
