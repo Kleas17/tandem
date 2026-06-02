@@ -298,7 +298,7 @@ export default function Screen4() {
     {
       role: "assistant",
       content:
-        "Donne une consigne de modification. Je peux soit valider la demande, soit te poser une question avant regeneration.",
+        "Donne une consigne de modification. Je peux soit valider la demande, soit te poser une question avant régénération.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -420,7 +420,7 @@ export default function Screen4() {
     navigator.clipboard.writeText(value).then(() => {
       setCopiedPrompt(kind);
       setTimeout(() => setCopiedPrompt(null), 2500);
-      toast.success("Prompt copie");
+      toast.success("Prompt copié");
     });
   };
 
@@ -429,7 +429,7 @@ export default function Screen4() {
     buildSequencePdf(sequence, kit.sequence, sequencePrompt).save(
       "tandem-fiche-sequence.pdf",
     );
-    toast.success("Fiche sequence telechargee");
+    toast.success("Fiche séquence téléchargée");
   };
 
   const downloadEvaluationPdf = () => {
@@ -437,7 +437,7 @@ export default function Screen4() {
     buildEvaluationPdf(sequence, kit.evaluationKit, evaluationPrompt).save(
       "tandem-fiche-evaluation.pdf",
     );
-    toast.success("Fiche evaluation telechargee");
+    toast.success("Fiche évaluation téléchargée");
   };
 
   const handleShare = () => {
@@ -448,7 +448,7 @@ export default function Screen4() {
       });
     } else {
       navigator.clipboard.writeText(window.location.origin);
-      toast.success("Lien copie");
+      toast.success("Lien copié");
     }
   };
 
@@ -467,7 +467,7 @@ export default function Screen4() {
         GENERATED_KIT_KEY,
         JSON.stringify({ cacheKey: JSON.stringify(sequence || {}), data: nextKit }),
       );
-      toast.success("Proposition de sequence affinee");
+      toast.success("Proposition de séquence affinée");
     } catch {
       toast.error("Impossible d'affiner la proposition");
     } finally {
@@ -533,13 +533,13 @@ export default function Screen4() {
         ...prev,
         {
           role: "assistant",
-          content: "OK, la sequence a ete regeneree avec cette consigne.",
+          content: "OK, la séquence a été régénérée avec cette consigne.",
         },
       ]);
       setPendingInstructionDraft("");
-      toast.success("Sequence regeneree depuis le chat");
+      toast.success("Séquence régénérée depuis le chat");
     } catch {
-      toast.error("Impossible de regenerer depuis la consigne libre");
+      toast.error("Impossible de régénérer depuis la consigne libre");
     } finally {
       setChatLoading(false);
     }
@@ -570,7 +570,7 @@ export default function Screen4() {
               <LoaderCircle size={18} style={{ color: "#ffc200" }} className="animate-spin" />
               <div className="flex-1">
                 <div style={{ color: "#ffc200", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>GENERATION IA EN COURS</div>
-                <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Synthese profil + cas sequence + cas evaluation</div>
+                <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Synthèse profil + cas séquence + cas évaluation</div>
               </div>
               <span style={{ color: "#ffc200", fontFamily: "monospace", fontSize: 12, fontWeight: 700 }}>{loadingProgress}%</span>
             </div>
@@ -590,7 +590,7 @@ export default function Screen4() {
                 <div className="flex-1">
                   <div style={{ color: "#ff33ad", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>CHAT DE MODIFICATION</div>
                   <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>
-                    Donne une consigne libre, puis regenere si la demande est assez claire
+                    Donne une consigne libre, puis régénère si la demande est assez claire
                   </div>
                 </div>
               </div>
@@ -655,7 +655,7 @@ export default function Screen4() {
                         <div style={{ color: "#9C8B76", fontSize: 10, fontFamily: "monospace", marginBottom: 6 }}>ASSISTANT</div>
                         <div className="flex items-center gap-2" style={{ color: "#1A1208", fontSize: 13 }}>
                           <LoaderCircle size={14} className="animate-spin" />
-                          <span>En train d'ecrire</span>
+                          <span>En train d'écrire</span>
                           <div className="flex items-center gap-1">
                             {[0, 1, 2].map((dot) => (
                               <motion.span
@@ -682,7 +682,7 @@ export default function Screen4() {
                   <textarea
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Exemple : rends la sequence plus orientee travail de groupe et ajoute une evaluation formative intermediaire."
+                    placeholder="Exemple : rends la séquence plus orientée travail de groupe et ajoute une évaluation formative intermédiaire."
                     rows={3}
                     className="w-full rounded-xl px-4 py-3 outline-none resize-none"
                     style={{
@@ -729,7 +729,7 @@ export default function Screen4() {
                     }}
                   >
                     <RefreshCw size={15} />
-                    Regenerer avec ces infos
+                    Régénérer avec ces infos
                   </motion.button>
                 </div>
               </div>
@@ -754,7 +754,7 @@ export default function Screen4() {
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
                     {
-                      title: "Cas 1 - Structurer une sequence",
+                      title: "Cas 1 - Structurer une séquence",
                       friction: kit.recommendation.case1Friction,
                       usage: kit.recommendation.case1Usage,
                       limit: kit.recommendation.case1Limit,
@@ -763,7 +763,7 @@ export default function Screen4() {
                       color: "#1da82a",
                     },
                     {
-                      title: "Cas 2 - Differencier une evaluation",
+                      title: "Cas 2 - Différencier une évaluation",
                       friction: kit.recommendation.case2Friction,
                       usage: kit.recommendation.case2Usage,
                       limit: kit.recommendation.case2Limit,
@@ -822,7 +822,7 @@ export default function Screen4() {
                     </motion.button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => copyPrompt("sequence")} className="px-4 py-3 rounded-xl flex items-center justify-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 13 }}>
                       <Copy size={16} />
-                      {copiedPrompt === "sequence" ? "Prompt copie" : "Prompt Cas 1"}
+                      {copiedPrompt === "sequence" ? "Prompt copié" : "Prompt Cas 1"}
                     </motion.button>
                   </div>
                 </div>
@@ -840,7 +840,7 @@ export default function Screen4() {
                     <p style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>{kit.evaluationKit.whyUseful}</p>
                   </div>
                   {[
-                    ["Leviers de differenciation", kit.evaluationKit.differentiationLevers],
+                    ["Leviers de différenciation", kit.evaluationKit.differentiationLevers],
                     ["Ce que l'enseignant garde en main", kit.evaluationKit.whatTeacherKeeps],
                     ["Points de vigilance", kit.evaluationKit.vigilancePoints],
                     ["Exemples de variantes", kit.evaluationKit.exampleVariants],
@@ -864,7 +864,7 @@ export default function Screen4() {
                     </motion.button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => copyPrompt("evaluation")} className="px-4 py-3 rounded-xl flex items-center justify-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 13 }}>
                       <Copy size={16} />
-                      {copiedPrompt === "evaluation" ? "Prompt copie" : "Prompt Cas 2"}
+                      {copiedPrompt === "evaluation" ? "Prompt copié" : "Prompt Cas 2"}
                     </motion.button>
                   </div>
                 </div>
@@ -876,14 +876,14 @@ export default function Screen4() {
                 <WandSparkles size={18} style={{ color: "#ffc200" }} />
                 <div className="flex-1">
                   <div style={{ color: "#ffc200", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>AFFINER LA PROPOSITION DU CAS 1</div>
-                  <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Demande une variante plus ciblee de la sequence</div>
+                  <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Demande une variante plus ciblée de la séquence</div>
                 </div>
               </div>
               <div className="p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                   ["concrete", "Plus concret"],
                   ["progressive", "Plus progressif"],
-                  ["differentiated", "Plus differencie"],
+                  ["differentiated", "Plus différencié"],
                   ["shorter", "Plus court"],
                 ].map(([mode, label]) => (
                   <motion.button
@@ -929,17 +929,17 @@ export default function Screen4() {
             <div className="grid md:grid-cols-2 gap-4 mb-6">
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleShare} className="py-4 rounded-xl flex items-center justify-center gap-3" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 14 }}>
                 <Share2 size={18} />
-                Partager ce kit avec un(e) collegue
+                Partager ce kit avec un(e) collègue
               </motion.button>
               <motion.button onClick={() => void runGeneration(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="py-4 rounded-xl flex items-center justify-center gap-3" style={{ background: "linear-gradient(135deg,#ffd41d,#ffc200)", color: "#1A1208", fontWeight: 700, fontSize: 14 }}>
                 <RefreshCw size={18} />
-                Regenerer les 2 cas avec l'IA
+                Régénérer les 2 cas avec l'IA
               </motion.button>
             </div>
 
             <div className="flex justify-center">
               <motion.button onClick={() => navigate("/")} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="px-7 py-2.5 rounded-xl inline-flex items-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(255,212,29,0.3)", color: "#ffd41d", fontWeight: 600, fontSize: 13 }}>
-                Retour a l'accueil
+                Retour à l'accueil
               </motion.button>
             </div>
           </>
