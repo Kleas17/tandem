@@ -1,0 +1,215 @@
+/* ─── GRID BACKGROUND ─── */
+@keyframes gridDrift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+
+/* ─── GLITCH ─── */
+@keyframes glitch {
+  0%, 88%, 100% { transform: none; clip-path: none; opacity: 1; }
+  89% {
+    clip-path: polygon(0 15%, 100% 15%, 100% 35%, 0 35%);
+    transform: translateX(-6px);
+    opacity: 0.85;
+  }
+  90% {
+    clip-path: polygon(0 55%, 100% 55%, 100% 75%, 0 75%);
+    transform: translateX(6px);
+    opacity: 0.85;
+  }
+  91% { clip-path: none; transform: none; }
+}
+
+@keyframes glitchColor {
+  0%, 88%, 100% { text-shadow: none; }
+  89% { text-shadow: -4px 0 #00FF87, 4px 0 #ff33ad; }
+  90% { text-shadow: 4px 0 #00FF87, -4px 0 #ff33ad; }
+  91% { text-shadow: none; }
+}
+
+/* ─── FLOAT ─── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+/* ─── SCANLINES ─── */
+@keyframes scanMove {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ─── PULSE RING ─── */
+@keyframes pulseRing {
+  0%   { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0,240,255,0.5); }
+  70%  { transform: scale(1);   box-shadow: 0 0 0 14px rgba(0,240,255,0); }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0,240,255,0); }
+}
+
+/* ─── XP FLOAT ─── */
+@keyframes xpFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  80%  { opacity: 1; transform: translateY(-40px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.9); }
+}
+
+/* ─── BADGE DROP ─── */
+@keyframes badgeDrop {
+  0%   { opacity: 0; transform: translateY(-30px) scale(0.8); }
+  60%  { opacity: 1; transform: translateY(6px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── SHIMMER (legendary items) ─── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ─── BLINK CURSOR ─── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ─── NEON PULSE ─── */
+@keyframes neonPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+/* ─── OLD PULSE (keep for backward compat) ─── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ─── ACHIEVEMENT SLIDE ─── */
+@keyframes achieveIn {
+  0%   { opacity: 0; transform: translateX(120px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── ROTATE ─── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── HUD CORNER BRACKETS ─── */
+.hud-card {
+  position: relative;
+}
+.hud-card::before,
+.hud-card::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: currentColor;
+  border-style: solid;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hud-card::before {
+  top: -1px; left: -1px;
+  border-width: 2px 0 0 2px;
+}
+.hud-card::after {
+  bottom: -1px; right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* ─── SCANLINES OVERLAY ─── */
+.scanlines {
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* ─── GRID BG ─── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0,255,135,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,135,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridDrift 25s linear infinite;
+}
+
+/* ─── GLITCH TEXT ─── */
+.glitch {
+  animation: glitch 5s ease-in-out infinite, glitchColor 5s ease-in-out infinite;
+}
+
+/* ─── RIPPLE BUTTON ─── */
+@keyframes rippleExpand {
+  to {
+    transform: translate(-50%, -50%) scale(70);
+    opacity: 0;
+  }
+}
+
+/* ─── ROOM ATMOSPHERE ANIMATIONS ─── */
+@keyframes floatUp {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  15%  { opacity: 0.7; }
+  80%  { opacity: 0.3; }
+  100% { transform: translateY(-130px) translateX(18px) scale(0.3); opacity: 0; }
+}
+@keyframes floatUpLeft {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  15%  { opacity: 0.6; }
+  100% { transform: translateY(-110px) translateX(-14px) scale(0.4); opacity: 0; }
+}
+@keyframes dustDrift {
+  0%   { transform: translate(0,0); opacity: 0; }
+  20%  { opacity: 0.8; }
+  80%  { opacity: 0.5; }
+  100% { transform: translate(40px,-70px); opacity: 0; }
+}
+@keyframes dustDriftLeft {
+  0%   { transform: translate(0,0); opacity: 0; }
+  20%  { opacity: 0.6; }
+  100% { transform: translate(-35px,-60px); opacity: 0; }
+}
+@keyframes matrixFall {
+  0%   { transform: translateY(-10%); opacity: 0; }
+  8%   { opacity: 1; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(110%); opacity: 0; }
+}
+@keyframes twinkle {
+  0%,100% { opacity: 0; transform: scale(0.3) rotate(0deg); }
+  50%      { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+@keyframes spotlightSway {
+  0%,100% { transform: skewX(-6deg) translateX(-8%); opacity: 0.07; }
+  50%     { transform: skewX(6deg) translateX(8%); opacity: 0.12; }
+}
+@keyframes paperSway {
+  0%,100% { transform: rotate(-4deg) translateY(0); }
+  50%     { transform: rotate(4deg) translateY(-10px); }
+}
+@keyframes goldRain {
+  0%   { transform: translateY(-5%) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.9; }
+  90%  { opacity: 0.5; }
+  100% { transform: translateY(110%) rotate(720deg); opacity: 0; }
+}
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes windowLight {
+  0%,100% { opacity: 0.06; }
+  50%     { opacity: 0.1; }
+}
+
+/* ─── TYPOGRAPHY — Komu New (Bebas Neue) + Acumin (DM Sans) ─── */
+h1, h2 {
+  font-family: 'Bebas Neue', system-ui, sans-serif !important;
+  letter-spacing: 0.02em;
+}
+
+body, p, span, div, button, input, select, textarea, label {
+  font-family: 'DM Sans', system-ui, sans-serif;
+}

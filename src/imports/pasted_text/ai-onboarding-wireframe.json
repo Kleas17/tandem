@@ -1,0 +1,103 @@
+Act as an expert Senior UX/UI Designer. Generate a high-fidelity responsive wireframe flow (Desktop, 1440px width) for an interactive AI onboarding kit designed for French middle/high school teachers ("Éducation Nationale, 2nd degré"). 
+
+The design must look professional, reassuring, and modern, using a clean layout with generous whitespace, crisp typography, and institutional yet accessible corporate aesthetics (inspired by modern EdTech tools). The core editorial philosophy is: "AI is a reflective partner and assistant, not a replacement. The teacher retains total pedagogical control."
+
+Generate 7 distinct web screen wireframes following this precise 3-part pedagogical flow:
+
+---
+PART 1: SENSIBILISATION (Awareness phase - No inputs required, reassuring tone)
+
+SCREEN 1: "La situation de départ"
+- Layout: Split screen or centered card layout.
+- Components:
+  * Top: Subtitle "PARTIE 1 — SENSIBILISATION" and a progress bar showing 1 of 7 steps.
+  * Main Content: A large headline emphasizing the challenge of course planning. Paragraph text: "Construire une séquence de cours, c'est organiser un ensemble de décisions dans le bon ordre. Quoi enseigner. Dans quel ordre. En combien de temps. Pour quel objectif final. Avec quels acquis de départ. Cette phase de structuration est souvent celle qui prend le plus de temps — pas parce qu'on ne sait pas, mais parce qu'il faut tenir beaucoup de variables ensemble en même temps."
+  * Emotional hook placeholder: A subtle visual indicator or stat callout reminding that junior teachers spend up to 40h/week prepping.
+  * Action: A prominent primary button centered at the bottom labeled "Continuer →".
+
+SCREEN 2: "Ce que l'IA peut faire ici"
+- Layout: Balanced layout with a clear heading.
+- Components:
+  * Top: Progress bar (Step 2/7).
+  * Main Title: "Sur ce type de travail, l'IA peut t'aider à..."
+  * Body Content: 3 distinct list items or card blocks with clean check icons:
+    1. "Décomposer un sujet en grandes étapes et identifier les jalons d'une progression cohérente."
+    2. "Formuler les questions à se poser avant de construire : prérequis, objectif final, lien entre séances et évaluation."
+    3. "Proposer une première structure sur laquelle travailler, ajuster et compléter."
+  * Bottom Editorial Note (Highlighted in a light info box): "Ce n'est pas elle qui construit la séquence. C'est toi qui la construis, avec un cadre de départ plus clair."
+  * Action: Primary button labeled "Continuer →".
+
+SCREEN 3: "Les garde-fous"
+- Layout: Trust-building warning layout (handling AI resistance).
+- Components:
+  * Top: Progress bar (Step 3/7).
+  * Main Title: "Avant de continuer, quelques choses à garder en tête"
+  * Content: 3 columns or a vertical list with subtle alert/info icons detailing AI limitations:
+    - Block 1: "L'IA ne connaît pas ton programme officiel. Sans contexte précis, elle peut proposer des jalons qui ne correspondent pas aux attendus réels."
+    - Block 2: "Elle ne sait pas ce que tes élèves ont déjà vu. La progression qu'elle suggère doit toujours être ajustée à leur réalité."
+    - Block 3: "Elle peut proposer une structure ambitieuse ou irréaliste si tu ne précises pas tes contraintes de temps."
+  * Footer summary statement: "Ce qu'elle produit est un point de départ, pas un livrable. C'est toi qui valides, corriges et construis la suite."
+  * Action: Primary button labeled "Continuer →".
+
+---
+PART 2: CADRAGE (Scoping phase - Teacher actively inputs information)
+
+SCREEN 4: "Décomposer le sujet"
+- Layout: Interactive form layout with clean input fields and radio buttons.
+- Components:
+  * Top: Subtitle "PARTIE 2 — CADRAGE" and progress bar (Step 4/7).
+  * Form Field 1 (Text Area): Label: "À la fin de cette séquence, qu'aimerais-tu que tes élèves sachent faire ?" / Placeholder example text: "ex. Analyser un document source primaire en justifiant son point de vue".
+  * Form Field 2 (Text Area): Label: "Quel chapitre ou quelle notion souhaites-tu travailler ?" / Placeholder example text: "ex. La Résistance française — 4e".
+  * Form Field 3 (Radio Group inline): Label: "De combien de séances disposes-tu ?" / Options: [ ] 2  [ ] 3 – 4  [ ] 5 – 6  [ ] Plus de 6.
+  * Form Field 4 (Radio Group vertical): Label: "Tes élèves ont-ils déjà travaillé sur cette notion ?" / Options: ( ) Pas du tout  ( ) Un peu  ( ) Oui, on approfondit.
+  * Action: Primary button labeled "Continuer →".
+
+SCREEN 5: "Ce qu'on donne en entrée"
+- Layout: Explanatory 2x2 grid or list mapping data to value.
+- Components:
+  * Top: Progress bar (Step 5/7).
+  * Main Title: "Pour que l'IA soit utile ici, voilà ce qu'il faut lui donner"
+  * Grid Content (Explaining why the inputs from Screen 4 matter):
+    - Item 1: "La compétence finale visée — Pour ancrer la structure dans un objectif réel, pas dans le contenu seul."
+    - Item 2: "La notion ou le chapitre exact — Sans cela, les suggestions restent trop génériques pour être utiles."
+    - Item 3: "Le nombre de séances disponibles — Pour éviter des propositions irréalistes dans ton calendrier."
+    - Item 4: "Ce que les élèves savent déjà — Pour que la progression parte de là où ils en sont, et non de zéro à chaque fois."
+  * Action: Primary button labeled "Continuer →".
+
+---
+PART 3: OUTILLAGE (Output & Tools phase - The personalized final deliverable)
+
+SCREEN 6: "Ce qu'on vérifie en sortie"
+- Layout: Quality assurance checklist layout.
+- Components:
+  * Top: Subtitle "PARTIE 3 — OUTILLAGE" and progress bar (Step 6/7).
+  * Main Title: "Avant d'utiliser ce que l'IA propose, quelques vérifications"
+  * Content: A beautiful checkbox list layout mimicking a validation process:
+    [ ] Les jalons proposés sont-ils cohérents avec le programme ?
+    [ ] La progression tient-elle compte de ce que les élèves savent déjà ?
+    [ ] Le découpage est-il réaliste dans le temps disponible ?
+    [ ] L'évaluation finale est-elle bien liée à la compétence définie au départ ?
+    [ ] Y a-t-il un moment de vérification intermédiaire dans la séquence ?
+  * Action: High-visibility primary button labeled "Voir ma fiche de départ →".
+
+SCREEN 7: "Fiche réflexe + prompt"
+- Layout: Dashboard/Deliverable layout. Left side: The downloadable card. Right side or bottom: Call-to-actions.
+- Components:
+  * Top: Progress bar (Step 7/7 - Completed state).
+  * Central Deliverable Container (Styled like a premium downloadable PDF preview with border borders):
+    * Card Header: "Fiche réflexe #1 — Structurer une séquence avec l'IA"
+    * Card Section 1: "5 questions à poser à l'IA"
+      - Bullets: "Quels pourraient être les grands jalons...", "Quels prérequis...", "Comment articuler...", "Comment vérifier...", "Quelles difficultés...".
+    * Card Section 2 (Styled as a code/text block with a distinct background tone): "Prompt de départ — pré-rempli"
+      - Content text: "J'ai besoin d'aide pour structurer une séquence sur [La Résistance française] pour des élèves de [4e]. J'ai environ [5] séances. À la fin, je voudrais qu'ils soient capables de [analyser un document source primaire]. Ils connaissent peu cette notion. Ne rédige pas la séquence. Aide-moi à clarifier les étapes, les questions à me poser, et la façon d'articuler objectifs, progression et évaluation finale."
+  * Action Buttons (Side-by-side below or next to the card):
+    - Button 1 (Primary, with an icon): "📄 Télécharger la fiche PDF"
+    - Button 2 (Secondary, with an icon): "📋 Copier le prompt"
+  * Institutional footer mention: Small text anchor "Inspiré par Eduscol IA".
+
+---
+DESIGN SYSTEM INSTRUCTIONS FOR GENERATION:
+- Layout: Desktop 1440px grid, center-aligned layout, 12-column setup for sections.
+- Color Palette (Mental model for UI): Deep Royal Blue for primary structure (trust), slate for secondary texts, light grayish-blue for background cards and warning text containers.
+- Typography: Clean, legible sans-serif font scale (e.g., Inter or Roboto style hierarchy).
+- Components: Use distinct styles for primary buttons, radio items, text field containers, and downloadable cards.
