@@ -1221,7 +1221,7 @@ export default function Screen4() {
                 {[
                   ["concrete", "Plus concret"],
                   ["progressive", "Plus progressif"],
-                  ["differentiated", "Plus diffÃ©renciÃ©"],
+                  ["differentiated", "Plus différencié©"],
                   ["shorter", "Plus court"],
                 ].map(([mode, label]) => (
                   <motion.button
