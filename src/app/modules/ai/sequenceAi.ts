@@ -1,4 +1,4 @@
-const MISTRAL_API_KEY = "AtKHEFJAavv5Unaj1wopV9GXpntVMtyr";
+﻿const MISTRAL_API_KEY = "AtKHEFJAavv5Unaj1wopV9GXpntVMtyr";
 const MISTRAL_MODEL = "mistral-small-latest";
 
 export interface SequenceClarification {
@@ -152,26 +152,26 @@ async function callMistralJson(prompt: string, temperature = 0.4) {
 
 function fixTextEncoding(value: string) {
   return value
-    .replace(/Ã©/g, "é")
-    .replace(/Ã¨/g, "è")
-    .replace(/Ãª/g, "ê")
-    .replace(/Ã«/g, "ë")
-    .replace(/Ã /g, "à")
-    .replace(/Ã¢/g, "â")
-    .replace(/Ã®/g, "î")
-    .replace(/Ã¯/g, "ï")
-    .replace(/Ã´/g, "ô")
-    .replace(/Ã¹/g, "ù")
-    .replace(/Ã»/g, "û")
-    .replace(/Ã§/g, "ç")
-    .replace(/Ã‰/g, "É")
-    .replace(/Ã€/g, "À")
-    .replace(/Â·/g, "·")
+    .replace(/Ã©/g, "\u00e9")
+    .replace(/Ã¨/g, "\u00e8")
+    .replace(/Ãª/g, "\u00ea")
+    .replace(/Ã«/g, "\u00eb")
+    .replace(/Ã /g, "\u00e0")
+    .replace(/Ã¢/g, "\u00e2")
+    .replace(/Ã®/g, "\u00ee")
+    .replace(/Ã¯/g, "\u00ef")
+    .replace(/Ã´/g, "\u00f4")
+    .replace(/Ã¹/g, "\u00f9")
+    .replace(/Ã»/g, "\u00fb")
+    .replace(/Ã§/g, "\u00e7")
+    .replace(/Ã‰/g, "\u00c9")
+    .replace(/Ã€/g, "\u00c0")
+    .replace(/Â·/g, "\u00b7")
     .replace(/â€™/g, "'")
     .replace(/â€œ/g, '"')
     .replace(/â€/g, '"')
     .replace(/â€“|â€”/g, "-")
-    .replace(/â€¢/g, "•")
+    .replace(/â€¢/g, "\u2022")
     .replace(/\uFFFD/g, "");
 }
 

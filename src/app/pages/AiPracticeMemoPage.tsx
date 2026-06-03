@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, BookMarked, LoaderCircle, Sparkles } from "lucide-react";
@@ -17,12 +17,15 @@ export default function AiPracticeMemoPage() {
   const navigate = useNavigate();
   const { triggerRipple, RippleLayer } = useCtaRipple();
   const [read, setRead] = useState<string[]>([]);
+  const [riskAcknowledged, setRiskAcknowledged] = useState(false);
   const [riskAnalysis, setRiskAnalysis] = useState<RiskAnalysis | null>(null);
   const [isLoadingRisk, setIsLoadingRisk] = useState(true);
 
   const markRead = (id: string) =>
     setRead((prev) => (prev.includes(id) ? prev : [...prev, id]));
-  const allRead = read.length === SECTIONS.length;
+  const allSectionsRead = read.length === SECTIONS.length;
+  const allRead = riskAcknowledged && allSectionsRead;
+  const remainingItems = (riskAcknowledged ? 0 : 1) + (SECTIONS.length - read.length);
 
   useEffect(() => {
     const sequence = readJson<SequenceInput | null>(STORAGE_KEYS.sequence, null);
@@ -134,6 +137,45 @@ export default function AiPracticeMemoPage() {
                     </p>
                   </div>
                 ))}
+                <AnimatePresence>
+                  {!riskAcknowledged && (
+                    <motion.button
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setRiskAcknowledged(true)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="w-full py-2.5 rounded-xl flex items-center justify-center gap-2 mt-3"
+                      style={{
+                        background: "#edfaee",
+                        border: "1px solid rgba(29,168,42,0.25)",
+                        color: "#1da82a",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      ✓ Analyse IA prise en compte - section suivante
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+                {riskAcknowledged && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-xl px-4 py-2.5 text-center"
+                    style={{
+                      background: "#edfaee",
+                      border: "1px solid rgba(29,168,42,0.22)",
+                      color: "#1da82a",
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✓ Analyse IA prise en compte
+                  </motion.div>
+                )}
               </div>
             )}
           </div>
@@ -260,7 +302,11 @@ export default function AiPracticeMemoPage() {
               <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.25) 50%,transparent 60%)", animation: "shimmer 2s linear infinite" }} />
             )}
             <RippleLayer />
-            {allRead ? <>Voir le livrable IA <ChevronRight size={18} /></> : `Lire encore ${SECTIONS.length - read.length} section${SECTIONS.length - read.length > 1 ? "s" : ""}`}
+            {allRead ? (
+              <>Voir le livrable IA <ChevronRight size={18} /></>
+            ) : (
+              `Lire encore ${remainingItems} élément${remainingItems > 1 ? "s" : ""}`
+            )}
           </motion.button>
         </div>
       </div>

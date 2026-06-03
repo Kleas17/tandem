@@ -9,6 +9,7 @@ import { FacilitatorOverlay } from "../components/FacilitatorOverlay";
 import { XpPanel } from "../components/XpPanel";
 import { QuizModal } from "../components/QuizModal";
 import { TreasureMap } from "../components/TreasureMap";
+import { CampusMap } from "../components/CampusMap";
 import { setQuizListener } from "../quizStore";
 import { addXp } from "../xpStore";
 import type { QuizQuestion } from "../quizStore";
@@ -124,6 +125,44 @@ export default function AppLayout() {
       </motion.div>
 
       {/* ── OVERLAYS ── */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`map_reveal_${location.pathname}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0, 1, 1, 0] }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 2.45, times: [0, 0.14, 0.25, 0.82, 1] }}
+          className="fixed inset-0 z-[430] pointer-events-none hidden sm:flex items-center justify-center px-6"
+          style={{ background: "rgba(26,18,8,0.13)", backdropFilter: "blur(2px)" }}
+        >
+          <motion.div
+            initial={{ scaleX: 0.06, scaleY: 0.7, rotate: -4, opacity: 0.2 }}
+            animate={{
+              scaleX: [0.06, 1.04, 1, 1],
+              scaleY: [0.7, 1.03, 1, 1],
+              rotate: [-4, 1, 0, 0],
+              opacity: [0.2, 1, 1, 1],
+            }}
+            transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1], delay: 0.22 }}
+            className="w-full max-w-lg rounded-3xl p-3"
+            style={{ background: "#FDF6E3", border: "2px solid rgba(255,212,29,0.38)", boxShadow: "0 24px 80px rgba(26,18,8,0.2)", transformOrigin: "center" }}
+          >
+            <div className="flex items-center justify-between px-2 pb-2">
+              <div>
+                <div style={{ color: "#9C8B76", fontFamily: "monospace", fontSize: 8, letterSpacing: 2 }}>
+                  CARTE DÉPLIÉE
+                </div>
+                <div style={{ color: currentRoom.color, fontWeight: 900, fontSize: 14 }}>
+                  {currentRoom.label}
+                </div>
+              </div>
+              <span style={{ fontSize: 20 }}>{currentRoom.icon}</span>
+            </div>
+            <CampusMap rooms={ROOMS} currentIndex={currentIndex} compact />
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+
       <PassportModal
         open={passportOpen}
         onClose={() => setPassportOpen(false)}

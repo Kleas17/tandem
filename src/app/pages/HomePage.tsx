@@ -35,7 +35,7 @@ export default function LandingPage() {
     triggerRipple(e);
     setLaunched(true);
     confetti({ particleCount: 120, spread: 85, origin: { y: 0.55 }, colors: ["#ffd41d", "#1da82a", "#ff33ad", "#ffc200"] });
-    setTimeout(() => navigate("/step/1"), 650);
+    setTimeout(() => navigate("/campus"), 650);
   };
 
   return (

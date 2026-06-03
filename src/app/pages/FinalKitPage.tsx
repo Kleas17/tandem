@@ -56,6 +56,7 @@ export default function FinalKitPage() {
   const navigate = useNavigate();
   const [kit, setKit] = useState<FinalKitState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [celebrating, setCelebrating] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(8);
   const [error, setError] = useState<string | null>(null);
   const [copiedModalPrompt, setCopiedModalPrompt] = useState(false);
@@ -80,6 +81,7 @@ export default function FinalKitPage() {
   const [pendingInstructionDraft, setPendingInstructionDraft] = useState("");
   const { triggerRipple, RippleLayer } = useCtaRipple();
   const progressIntervalRef = useRef<number | null>(null);
+  const celebrationTimeoutRef = useRef<number | null>(null);
   const topRef = useRef<HTMLDivElement | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -130,6 +132,8 @@ export default function FinalKitPage() {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setError(null);
     setLoading(true);
+    setCelebrating(false);
+    if (celebrationTimeoutRef.current) window.clearTimeout(celebrationTimeoutRef.current);
     setLoadingProgress(8);
     const cacheKey = JSON.stringify(sequence || {});
 
@@ -141,7 +145,10 @@ export default function FinalKitPage() {
       if (cached?.cacheKey === cacheKey) {
         setKit(cached.data);
         setLoadingProgress(100);
-        window.setTimeout(() => setLoading(false), 200);
+        window.setTimeout(() => {
+          setLoading(false);
+          setCelebrating(true);
+        }, 200);
         return;
       }
       if (cached) {
@@ -167,6 +174,7 @@ export default function FinalKitPage() {
       setLoadingProgress(100);
       window.setTimeout(() => {
         setLoading(false);
+        setCelebrating(true);
         confetti({
           particleCount: 90,
           spread: 70,
@@ -186,6 +194,7 @@ export default function FinalKitPage() {
           : "La generation IA a echoue.",
       );
       setLoading(false);
+      setCelebrating(true);
     }
   };
 
@@ -209,6 +218,18 @@ export default function FinalKitPage() {
       if (progressIntervalRef.current) window.clearInterval(progressIntervalRef.current);
     };
   }, [loading]);
+
+  useEffect(() => {
+    if (!celebrating) return;
+    celebrationTimeoutRef.current = window.setTimeout(() => {
+      setCelebrating(false);
+    }, 4000);
+    return () => {
+      if (celebrationTimeoutRef.current) {
+        window.clearTimeout(celebrationTimeoutRef.current);
+      }
+    };
+  }, [celebrating]);
 
   useEffect(() => {
     if (!chatScrollRef.current) return;
@@ -442,7 +463,94 @@ export default function FinalKitPage() {
           </div>
         )}
 
-        {!loading && kit && (
+        {!loading && celebrating && kit && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -10 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="relative overflow-hidden rounded-3xl mb-6"
+            style={{
+              minHeight: 430,
+              background: "radial-gradient(circle at 50% 32%, rgba(255,212,29,0.28) 0%, rgba(255,252,230,0.9) 34%, #FFFFFF 72%)",
+              border: "1px solid rgba(255,212,29,0.38)",
+              boxShadow: "0 24px 80px rgba(255,194,0,0.18)",
+            }}
+          >
+            <motion.div
+              className="absolute left-1/2 top-1/2 pointer-events-none"
+              style={{
+                width: 520,
+                height: 520,
+                marginLeft: -260,
+                marginTop: -260,
+                background: "conic-gradient(from 0deg, transparent, rgba(255,212,29,0.32), transparent, rgba(255,51,173,0.12), transparent)",
+                borderRadius: "50%",
+                filter: "blur(4px)",
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 5.5, repeat: Infinity, ease: "linear" }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(115deg, transparent 0%, transparent 42%, rgba(255,255,255,0.72) 49%, transparent 58%, transparent 100%)",
+              }}
+            />
+
+            <div className="relative z-10 flex min-h-[430px] flex-col items-center justify-center px-6 py-12 text-center">
+              <motion.div
+                initial={{ scale: 0.4, rotate: -12, opacity: 0 }}
+                animate={{
+                  scale: [0.4, 1.2, 1],
+                  rotate: [-12, 5, 0],
+                  opacity: 1,
+                  y: [12, -8, 0],
+                }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                style={{ fontSize: "clamp(84px, 15vw, 140px)", lineHeight: 1, filter: "drop-shadow(0 20px 30px rgba(255,194,0,0.28))" }}
+              >
+                🏆
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45, duration: 0.35 }}
+                style={{ color: "#ffc200", fontFamily: "monospace", fontSize: 10, letterSpacing: 3, fontWeight: 900, marginTop: 18 }}
+              >
+                SALLE 04/04 · TROPHÉE DÉBLOQUÉ
+              </motion.div>
+              <motion.h2
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.58, duration: 0.35 }}
+                style={{ color: "#1A1208", fontSize: "clamp(34px, 7vw, 72px)", lineHeight: 0.95, fontWeight: 900, marginTop: 10 }}
+              >
+                Félicitations
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.76, duration: 0.35 }}
+                style={{ color: "#6E5A45", fontSize: 15, lineHeight: 1.7, maxWidth: 520, marginTop: 16 }}
+              >
+                Ton kit IA est prêt. Les fiches réflexes, les prompts et les points de vigilance vont s'ouvrir dans quelques secondes.
+              </motion.p>
+
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "min(360px, 80vw)" }}
+                transition={{ delay: 0.95, duration: 3.05, ease: "linear" }}
+                className="mt-8 h-2 rounded-full"
+                style={{ background: "linear-gradient(90deg,#ffd41d,#1da82a,#ff33ad)", boxShadow: "0 0 24px rgba(255,212,29,0.45)" }}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {!loading && !celebrating && kit && (
           <>
             {promptModal && (
               <div

@@ -28,9 +28,9 @@ export interface Level {
 const LEVELS: Level[] = [
   { name: "NOVICE",           color: "#9C8B76", minXp: 0,   nextXp: 100 },
   { name: "PROF JUNIOR",      color: "#1da82a", minXp: 100, nextXp: 300 },
-  { name: "PROF AGUERRI·E",   color: "#ffd41d", minXp: 300, nextXp: 500 },
+  { name: "PROF AGUERRI�E",   color: "#ffd41d", minXp: 300, nextXp: 500 },
   { name: "EXPERT IA",        color: "#ff33ad", minXp: 500, nextXp: 700 },
-  { name: "MAÎTRE DU CAMPUS",  color: "#ffd41d", minXp: 700, nextXp: null },
+  { name: "MA�TRE DU CAMPUS",  color: "#ffd41d", minXp: 700, nextXp: null },
 ];
 
 export function getLevel(xp: number): Level {
