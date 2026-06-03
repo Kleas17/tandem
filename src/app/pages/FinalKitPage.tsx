@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import {
@@ -13,18 +13,17 @@ import {
   Sparkles,
   WandSparkles,
 } from "lucide-react";
-import { jsPDF } from "jspdf";
-import { useCtaRipple } from "./useCtaRipple";
+import { useCtaRipple } from "../components/useCtaRipple";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { getQuizAnswers, getScore } from "../quizStore";
 import {
   analyzeChatRefinement,
   buildEvaluationPrompt,
+  buildFallbackGeneration,
   buildPrompt,
   FALLBACK_EVALUATION_KIT,
   FALLBACK_EVALUATION_PROMPT_DETAILS,
-  FALLBACK_GENERATION,
   FALLBACK_SEQUENCE_PROMPT_DETAILS,
   FALLBACK_RECOMMENDATION,
   generateEvaluationPromptDetails,
@@ -36,272 +35,24 @@ import {
   refineSequence,
   refineSequenceWithInstruction,
   type ChatRefinementResult,
-  type EvaluationKit,
-  type GeneratedSequence,
-  type PromptDetails,
-  type RecommendationSummary,
   type SequenceInput,
-} from "../lib/sequenceAi";
-
-const GENERATED_KIT_KEY = "tandem_generated_kit_v3";
-
-type RefineMode = "concrete" | "progressive" | "differentiated" | "shorter";
-
-interface FinalKitState {
-  recommendation: RecommendationSummary;
-  sequence: GeneratedSequence;
-  evaluationKit: EvaluationKit;
-}
-
-interface PromptModalCache {
-  sequence: PromptDetails | null;
-  evaluation: PromptDetails | null;
-}
-
-type PromptModalState = {
-  kind: "sequence" | "evaluation";
-  source: "ai" | "generic";
-} | null;
-
-function getReflexSheetSequence() {
-  return {
-    title: "Fiche reflexe 1 - Structurer une sequence avec l'IA",
-    points: [
-      "Ce que vous mettez dans le prompt : sujet, objectif final, discipline, niveau, temps disponible, acquis et contraintes utiles.",
-      "Ce que vous verifiez toujours : coherence avec le programme reel, rythme reel de la classe, articulation entre jalons et evaluation.",
-      "Ce que vous ne deleguez pas : logique de progression, arbitrages pedagogiques, niveau d'exigence final.",
-    ],
-  };
-}
-
-function getReflexSheetEvaluation() {
-  return {
-    title: "Fiche reflexe 2 - Differencier une evaluation avec l'IA",
-    points: [
-      "Ce que l'IA peut faire : proposer des variantes de consignes, de guidage ou de difficulte a partir d'un meme sujet.",
-      "Ce que vous gardez en main : competence visee, criteres, niveau d'exigence et validation finale des rendus.",
-      "Ce que vous surveillez : risque de simplification excessive, perte d'alignement pedagogique, variations incoherentes entre versions.",
-    ],
-  };
-}
-
-function getScoreBadge(correct: number) {
-  if (correct === 3) {
-    return {
-      label: "Reflexes integres",
-      color: "#1da82a",
-      bg: "#edfaee",
-      border: "rgba(29,168,42,0.25)",
-    };
-  }
-  if (correct >= 2) {
-    return {
-      label: "En bonne voie",
-      color: "#ffc200",
-      bg: "#fffce6",
-      border: "rgba(255,212,29,0.3)",
-    };
-  }
-  return {
-    label: "A consolider",
-    color: "#ff33ad",
-    bg: "#fff0fa",
-    border: "rgba(255,51,173,0.25)",
-  };
-}
-
-function mergeUnique(base: string[], extra: string[]) {
-  const seen = new Set<string>();
-  return [...base, ...extra].filter((item) => {
-    const key = item.trim().toLowerCase();
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function enrichSequence(
-  generated: GeneratedSequence,
-  selfCheck: { fragilePoints: string[]; vigilancePoints: string[] },
-): GeneratedSequence {
-  return {
-    ...generated,
-    fragilePoints: mergeUnique(generated.fragilePoints, selfCheck.fragilePoints),
-    vigilancePoints: mergeUnique(
-      generated.vigilancePoints,
-      selfCheck.vigilancePoints,
-    ),
-  };
-}
-
-function formatClarifications(sequence: SequenceInput | null) {
-  if (!sequence?.aiClarifications || sequence.aiClarifications.length === 0) {
-    return [];
-  }
-  return sequence.aiClarifications.map(
-    (item) => `${item.question}: ${item.answer || "Non precise"}`,
-  );
-}
-
-function buildPdfDoc(
-  title: string,
-  subtitle: string,
-  sections: Array<{ title: string; body: string | string[] }>,
-) {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const marginX = 44;
-  const topMargin = 44;
-  const bottomMargin = 44;
-  const contentWidth = pageWidth - marginX * 2;
-  let y = topMargin;
-  const colors = {
-    ink: [26, 18, 8] as [number, number, number],
-    body: [74, 61, 48] as [number, number, number],
-    muted: [156, 139, 118] as [number, number, number],
-    yellow: [255, 194, 0] as [number, number, number],
-    yellowSoft: [255, 252, 230] as [number, number, number],
-    line: [228, 220, 210] as [number, number, number],
-    page: [255, 248, 240] as [number, number, number],
-    white: [255, 255, 255] as [number, number, number],
-  };
-
-  const ensureSpace = (needed = 24) => {
-    if (y + needed > pageHeight - bottomMargin) {
-      doc.addPage();
-      doc.setFillColor(...colors.page);
-      doc.rect(0, 0, pageWidth, pageHeight, "F");
-      y = topMargin;
-    }
-  };
-
-  const drawPanel = (sectionTitle: string, body: string | string[]) => {
-    const items = Array.isArray(body) ? body : [body];
-    const blockHeight =
-      34 +
-      items.flatMap((item) => doc.splitTextToSize(item, contentWidth - 30)).length *
-        15 +
-      16;
-    ensureSpace(blockHeight + 10);
-    doc.setFillColor(...colors.white);
-    doc.roundedRect(marginX, y, contentWidth, blockHeight, 12, 12, "F");
-    doc.setFillColor(...colors.yellow);
-    doc.roundedRect(marginX, y + 12, 4, blockHeight - 24, 4, 4, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(...colors.yellow);
-    doc.text(sectionTitle.toUpperCase(), marginX + 18, y + 20);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor(...colors.body);
-    let cursorY = y + 40;
-    items.forEach((item) => {
-      const lines = doc.splitTextToSize(item, contentWidth - 30);
-      doc.text(lines, marginX + 18, cursorY);
-      cursorY += lines.length * 15 + 6;
-    });
-    y += blockHeight + 12;
-  };
-
-  doc.setFillColor(...colors.page);
-  doc.rect(0, 0, pageWidth, pageHeight, "F");
-  doc.setFillColor(...colors.white);
-  doc.roundedRect(marginX, y, contentWidth, 100, 18, 18, "F");
-  doc.setFillColor(...colors.yellow);
-  doc.roundedRect(marginX, y + 16, 6, 68, 6, 6, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...colors.muted);
-  doc.text("TANDEM · LIVRABLE PERSONNALISE", marginX + 24, y + 24);
-  doc.setFontSize(20);
-  doc.setTextColor(...colors.ink);
-  doc.text(title, marginX + 24, y + 48);
-  doc.setFontSize(12);
-  doc.setTextColor(...colors.body);
-  doc.text(doc.splitTextToSize(subtitle, contentWidth - 48), marginX + 24, y + 72);
-  y += 120;
-
-  sections.forEach((section) => drawPanel(section.title, section.body));
-
-  const pageCount = doc.getNumberOfPages();
-  for (let page = 1; page <= pageCount; page += 1) {
-    doc.setPage(page);
-    doc.setDrawColor(...colors.line);
-    doc.line(marginX, pageHeight - 30, pageWidth - marginX, pageHeight - 30);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...colors.muted);
-    doc.text(`TANDEM · Y-Days 2026 · Page ${page}/${pageCount}`, marginX, pageHeight - 16);
-  }
-
-  return doc;
-}
-
-function buildSequencePdf(sequence: SequenceInput | null, generated: GeneratedSequence, prompt: string) {
-  return buildPdfDoc(
-    "Fiche reflexe 1 - Structurer une sequence avec l'IA",
-    generated.overview,
-    [
-      {
-        title: "Contexte enseignant",
-        body: [
-          `Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}`,
-          `Discipline : ${sequence?.discipline || "Non precise"}`,
-          `Niveau / classe : ${sequence?.niveau || "Non precise"}`,
-          `Nombre de seances : ${sequence?.seances || "Non precise"}`,
-          `Acquis prealables : ${sequence?.acquis || "Non precise"}`,
-          ...formatClarifications(sequence),
-        ],
-      },
-      { title: "Pourquoi cette structure", body: generated.whyThisStructure },
-      { title: "Accroche premiere seance", body: generated.firstSessionHook },
-      {
-        title: "Proposition de sequence",
-        body: generated.sessions.flatMap((session, index) => [
-          `Seance ${index + 1} - ${session.title}`,
-          `Objectif : ${session.objective}`,
-          `Focus : ${session.focus}`,
-          `Activite : ${session.activity}`,
-        ]),
-      },
-      { title: "Checkpoints", body: generated.checkpoints },
-      { title: "Points de vigilance", body: generated.vigilancePoints },
-      { title: "Points encore fragiles", body: generated.fragilePoints },
-      { title: "Ajustements enseignant", body: generated.teacherAdjustments },
-      { title: "Evaluation finale", body: generated.finalAssessment },
-      { title: "Prompt de depart", body: prompt },
-    ],
-  );
-}
-
-function buildEvaluationPdf(sequence: SequenceInput | null, generated: EvaluationKit, prompt: string) {
-  return buildPdfDoc(
-    "Fiche reflexe 2 - Differencier une evaluation avec l'IA",
-    generated.overview,
-    [
-      {
-        title: "Contexte enseignant",
-        body: [
-          `Sujet, contexte et objectif final : ${sequence?.objectif || "Non precise"}`,
-          `Discipline : ${sequence?.discipline || "Non precise"}`,
-          `Niveau / classe : ${sequence?.niveau || "Non precise"}`,
-          `Nombre de seances : ${sequence?.seances || "Non precise"}`,
-          `Acquis prealables : ${sequence?.acquis || "Non precise"}`,
-          ...formatClarifications(sequence),
-        ],
-      },
-      { title: "Pourquoi ce cas d'usage", body: generated.whyUseful },
-      { title: "Leviers de differenciation", body: generated.differentiationLevers },
-      { title: "Exemples de variantes", body: generated.exampleVariants },
-      { title: "Ce que l'enseignant garde en main", body: generated.whatTeacherKeeps },
-      { title: "Points de vigilance", body: generated.vigilancePoints },
-      { title: "Prompt de depart", body: prompt },
-    ],
-  );
-}
-
-export default function Screen4() {
+} from "../modules/ai/sequenceAi";
+import { STORAGE_KEYS } from "../modules/shared/storageKeys";
+import { readJson, removeStoredItem, writeJson } from "../modules/shared/storage";
+import {
+  type FinalKitState,
+  type PromptModalCache,
+  type PromptModalState,
+  type RefineMode,
+} from "../modules/final-kit/types";
+import {
+  getReflexSheetEvaluation,
+  getReflexSheetSequence,
+  getScoreBadge,
+} from "../modules/final-kit/reflexSheets";
+import { enrichSequence } from "../modules/final-kit/sequenceTransforms";
+import { buildEvaluationPdf, buildSequencePdf } from "../modules/final-kit/pdf";
+export default function FinalKitPage() {
   const navigate = useNavigate();
   const [kit, setKit] = useState<FinalKitState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -332,8 +83,7 @@ export default function Screen4() {
   const topRef = useRef<HTMLDivElement | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
-  const raw = localStorage.getItem("tandem_sequence");
-  const sequence = raw ? (JSON.parse(raw) as SequenceInput) : null;
+  const sequence = readJson<SequenceInput | null>(STORAGE_KEYS.sequence, null);
   const answers = getQuizAnswers();
   const score = getScore();
   const badge = getScoreBadge(score.correct);
@@ -384,19 +134,18 @@ export default function Screen4() {
     const cacheKey = JSON.stringify(sequence || {});
 
     if (!force) {
-      const cachedRaw = localStorage.getItem(GENERATED_KIT_KEY);
-      if (cachedRaw) {
-        try {
-          const cached = JSON.parse(cachedRaw) as { cacheKey: string; data: FinalKitState };
-          if (cached.cacheKey === cacheKey) {
-            setKit(cached.data);
-            setLoadingProgress(100);
-            window.setTimeout(() => setLoading(false), 200);
-            return;
-          }
-        } catch {
-          localStorage.removeItem(GENERATED_KIT_KEY);
-        }
+      const cached = readJson<{ cacheKey: string; data: FinalKitState } | null>(
+        STORAGE_KEYS.generatedKit,
+        null,
+      );
+      if (cached?.cacheKey === cacheKey) {
+        setKit(cached.data);
+        setLoadingProgress(100);
+        window.setTimeout(() => setLoading(false), 200);
+        return;
+      }
+      if (cached) {
+        removeStoredItem(STORAGE_KEYS.generatedKit);
       }
     }
 
@@ -413,10 +162,7 @@ export default function Screen4() {
         sequence: enrichedSequence,
         evaluationKit,
       };
-      localStorage.setItem(
-        GENERATED_KIT_KEY,
-        JSON.stringify({ cacheKey, data: nextKit }),
-      );
+      writeJson(STORAGE_KEYS.generatedKit, { cacheKey, data: nextKit });
       setKit(nextKit);
       setLoadingProgress(100);
       window.setTimeout(() => {
@@ -431,7 +177,7 @@ export default function Screen4() {
     } catch (generationError) {
       setKit({
         recommendation: FALLBACK_RECOMMENDATION,
-        sequence: FALLBACK_GENERATION,
+        sequence: buildFallbackGeneration(sequence),
         evaluationKit: FALLBACK_EVALUATION_KIT,
       });
       setError(
@@ -577,10 +323,10 @@ export default function Screen4() {
         sequence: enrichSequence(refined, selfCheck),
       };
       setKit(nextKit);
-      localStorage.setItem(
-        GENERATED_KIT_KEY,
-        JSON.stringify({ cacheKey: JSON.stringify(sequence || {}), data: nextKit }),
-      );
+      writeJson(STORAGE_KEYS.generatedKit, {
+        cacheKey: JSON.stringify(sequence || {}),
+        data: nextKit,
+      });
       toast.success("Proposition de séquence affinée");
     } catch {
       toast.error("Impossible d'affiner la proposition");
@@ -639,10 +385,10 @@ export default function Screen4() {
         sequence: enrichSequence(refined, selfCheck),
       };
       setKit(nextKit);
-      localStorage.setItem(
-        GENERATED_KIT_KEY,
-        JSON.stringify({ cacheKey: JSON.stringify(sequence || {}), data: nextKit }),
-      );
+      writeJson(STORAGE_KEYS.generatedKit, {
+        cacheKey: JSON.stringify(sequence || {}),
+        data: nextKit,
+      });
       setChatMessages((prev) => [
         ...prev,
         {
@@ -1134,7 +880,7 @@ export default function Screen4() {
                     <p style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>{kit.sequence.whyThisStructure}</p>
                   </div>
                   <div className="space-y-3">
-                    {kit.sequence.sessions.slice(0, 3).map((session, index) => (
+                    {kit.sequence.sessions.map((session, index) => (
                       <div key={`${session.title}-${index}`} className="rounded-xl p-4" style={{ background: "#F9F4EE", border: "1px solid rgba(0,0,0,0.06)" }}>
                         <div style={{ color: "#1A1208", fontSize: 10, fontFamily: "monospace", marginBottom: 6 }}>SEANCE {index + 1}</div>
                         <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{session.title}</div>

@@ -2,16 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight } from "lucide-react";
-import { useCtaRipple } from "./useCtaRipple";
+import { useCtaRipple } from "../components/useCtaRipple";
 import confetti from "canvas-confetti";
 import tandemLogo from "../../../LOGO_TANDEM.png";
-
-const ROOMS = [
-  { step: 1, icon: "📚", label: "Structurer une séquence de cours", desc: "Introduction au cas d'usage",        color: "#1da82a" },
-  { step: 2, icon: "📝", label: "Questionnaire structurant",        desc: "Informations essentielles",          color: "#ff33ad" },
-  { step: 3, icon: "🔍", label: "L'IA dans ta pratique",            desc: "Ce qu'il faut savoir",               color: "#ffd41d" },
-  { step: 4, icon: "🏆", label: "Mission accomplie",                desc: "Prompt + Fiche réflexe",             color: "#1da82a" },
-];
+import { ROOMS } from "../modules/campus/rooms";
 
 const CARD_ROTATIONS = [-2, 1.5, -1.5, 2];
 

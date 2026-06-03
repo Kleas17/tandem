@@ -218,6 +218,16 @@ function fitSessionsToRequestedCount(
   return fitted;
 }
 
+export function buildFallbackGeneration(sequence: SequenceInput | null): GeneratedSequence {
+  return {
+    ...FALLBACK_GENERATION,
+    sessions: fitSessionsToRequestedCount(
+      FALLBACK_GENERATION.sessions,
+      parseRequestedSessionCount(sequence),
+    ),
+  };
+}
+
 export const FALLBACK_GENERATION: GeneratedSequence = {
   title: "Proposition de sequence a retravailler",
   overview:

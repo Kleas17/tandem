@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, BookOpen, Lightbulb } from "lucide-react";
-import { useCtaRipple } from "./useCtaRipple";
+import { useCtaRipple } from "../components/useCtaRipple";
 import { requestQuiz } from "../quizStore";
 
-export default function Screen1() {
+export default function CourseSequenceIntroPage() {
   const navigate = useNavigate();
   const { triggerRipple, RippleLayer } = useCtaRipple();
   const [ctaReady, setCtaReady] = useState(false);

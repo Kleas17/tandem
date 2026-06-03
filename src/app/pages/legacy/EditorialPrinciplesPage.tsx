@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Rocket, CheckCircle, Shield } from "lucide-react";
-import { useCtaRipple } from "./useCtaRipple";
+import { useCtaRipple } from "../../components/useCtaRipple";
 
 const PRINCIPLES = [
   {
@@ -47,7 +47,7 @@ const PRINCIPLES = [
   },
 ];
 
-export default function Screen6() {
+export default function EditorialPrinciplesPage() {
   const navigate = useNavigate();
   const [toggled, setToggled] = useState<string[]>([]);
 

@@ -2,27 +2,17 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { getQuizAnswers, subscribeQuiz } from "../quizStore";
 import { subscribeXp } from "../xpStore";
-
-const TOTAL_ROOMS = 7;
+import { TOTAL_CAMPUS_PROGRESS_ROOMS } from "../modules/campus/rooms";
+import { getVisitedRoomCount } from "../modules/campus/roomProgress";
 const TOTAL_QUIZZES = 3;
-
-function getRoomsVisited(): number {
-  try {
-    const raw = localStorage.getItem("tandem_xp_rooms");
-    if (!raw) return 0;
-    return JSON.parse(raw).length;
-  } catch {
-    return 0;
-  }
-}
 
 export function XpPanel() {
   const [answers, setAnswers] = useState(() => getQuizAnswers());
-  const [rooms, setRooms] = useState(getRoomsVisited);
+  const [rooms, setRooms] = useState(getVisitedRoomCount);
 
   useEffect(() => {
     const unsubQuiz = subscribeQuiz(() => setAnswers({ ...getQuizAnswers() }));
-    const unsubXp = subscribeXp(() => setRooms(getRoomsVisited()));
+    const unsubXp = subscribeXp(() => setRooms(getVisitedRoomCount()));
     return () => { unsubQuiz(); unsubXp(); };
   }, []);
 
@@ -103,10 +93,10 @@ export function XpPanel() {
         {/* Room progress bar */}
         <div>
           <div style={{ color: "#C4B8AE", fontFamily: "monospace", fontSize: 7, letterSpacing: 1, marginBottom: 6 }}>
-            CAMPUS · {rooms}/{TOTAL_ROOMS} SALLES
+            CAMPUS · {rooms}/{TOTAL_CAMPUS_PROGRESS_ROOMS} SALLES
           </div>
           <div className="flex gap-0.5">
-            {Array.from({ length: TOTAL_ROOMS }, (_, i) => (
+            {Array.from({ length: TOTAL_CAMPUS_PROGRESS_ROOMS }, (_, i) => (
               <motion.div
                 key={i}
                 className="flex-1 rounded-sm"

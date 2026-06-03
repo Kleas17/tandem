@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import tandemLogo from "../../../LOGO_TANDEM.png";
-
-const SEEN_KEY = "tandem_intro_seen";
+import { STORAGE_KEYS } from "../modules/shared/storageKeys";
+import { hasStoredItem, writeStoredItem } from "../modules/shared/storage";
 
 export function BellIntro({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState<"bell" | "doors" | "done">("bell");
@@ -16,7 +16,7 @@ export function BellIntro({ onDone }: { onDone: () => void }) {
       setTimeout(() => setPhase("doors"), 2600),
       setTimeout(() => {
         setPhase("done");
-        localStorage.setItem(SEEN_KEY, "1");
+        writeStoredItem(STORAGE_KEYS.introSeen, "1");
         onDone();
       }, 3200),
     ];
@@ -111,7 +111,7 @@ export function BellIntro({ onDone }: { onDone: () => void }) {
             {/* Skip */}
             <button
               onClick={() => {
-                localStorage.setItem(SEEN_KEY, "1");
+                writeStoredItem(STORAGE_KEYS.introSeen, "1");
                 onDone();
               }}
               style={{ marginTop: 24, color: "#C4B8AE", fontSize: 11, fontFamily: "monospace", background: "none", border: "none", cursor: "pointer" }}
@@ -126,5 +126,5 @@ export function BellIntro({ onDone }: { onDone: () => void }) {
 }
 
 export function shouldShowIntro(): boolean {
-  return !localStorage.getItem(SEEN_KEY);
+  return !hasStoredItem(STORAGE_KEYS.introSeen);
 }

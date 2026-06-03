@@ -1,13 +1,14 @@
-const XP_KEY = "tandem_xp";
+import { STORAGE_KEYS } from "./modules/shared/storageKeys";
+
 const listeners = new Set<() => void>();
 
 export function getXp(): number {
-  return parseInt(localStorage.getItem(XP_KEY) || "0");
+  return parseInt(localStorage.getItem(STORAGE_KEYS.xp) || "0");
 }
 
 export function addXp(amount: number): number {
   const newXp = getXp() + amount;
-  localStorage.setItem(XP_KEY, String(newXp));
+  localStorage.setItem(STORAGE_KEYS.xp, String(newXp));
   listeners.forEach((fn) => fn());
   return newXp;
 }

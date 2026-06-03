@@ -1,3 +1,6 @@
+import { STORAGE_KEYS } from "./modules/shared/storageKeys";
+import { readJson, writeJson } from "./modules/shared/storage";
+
 export interface QuizQuestion {
   q: string;
   choices: [string, string];
@@ -41,20 +44,17 @@ export const SCREEN_QUIZZES: Record<number, QuizQuestion> = {
 };
 
 // Answer tracking — feeds into Screen 7 personalization
-const ANSWERS_KEY = "tandem_quiz_answers";
 let _quizListeners: (() => void)[] = [];
 
 export function recordAnswer(qNum: number, correct: boolean): void {
-  const raw = localStorage.getItem(ANSWERS_KEY);
-  const answers: Record<number, boolean> = raw ? JSON.parse(raw) : {};
+  const answers = readJson<Record<number, boolean>>(STORAGE_KEYS.quizAnswers, {});
   answers[qNum] = correct;
-  localStorage.setItem(ANSWERS_KEY, JSON.stringify(answers));
+  writeJson(STORAGE_KEYS.quizAnswers, answers);
   _quizListeners.forEach((fn) => fn());
 }
 
 export function getQuizAnswers(): Record<number, boolean> {
-  const raw = localStorage.getItem(ANSWERS_KEY);
-  return raw ? JSON.parse(raw) : {};
+  return readJson<Record<number, boolean>>(STORAGE_KEYS.quizAnswers, {});
 }
 
 export function getScore(): { correct: number; total: number } {

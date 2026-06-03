@@ -1,21 +1,21 @@
 import { createBrowserRouter } from "react-router";
-import AppLayout from "./components/AppLayout";
-import LandingPage from "./components/LandingPage";
-import Screen1 from "./components/Screen1";
-import Screen2 from "./components/Screen2";
-import Screen3 from "./components/Screen3";
-import Screen4 from "./components/Screen4";
+import AppLayout from "./layouts/AppLayout";
+import HomePage from "./pages/HomePage";
+import CourseSequenceIntroPage from "./pages/CourseSequenceIntroPage";
+import SequenceQuestionnairePage from "./pages/SequenceQuestionnairePage";
+import AiPracticeMemoPage from "./pages/AiPracticeMemoPage";
+import FinalKitPage from "./pages/FinalKitPage";
 
 export const router = createBrowserRouter([
-  { path: "/", Component: LandingPage },
+  { path: "/", Component: HomePage },
   {
     path: "/step",
     Component: AppLayout,
     children: [
-      { path: "1", Component: Screen1 },
-      { path: "2", Component: Screen2 },
-      { path: "3", Component: Screen3 },
-      { path: "4", Component: Screen4 },
+      { path: "1", Component: CourseSequenceIntroPage },
+      { path: "2", Component: SequenceQuestionnairePage },
+      { path: "3", Component: AiPracticeMemoPage },
+      { path: "4", Component: FinalKitPage },
     ],
   },
 ]);

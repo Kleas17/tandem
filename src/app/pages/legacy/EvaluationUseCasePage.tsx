@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, ClipboardCheck, Zap } from "lucide-react";
-import { useXpFloat } from "./XpFloater";
-import { useCtaRipple } from "./useCtaRipple";
+import { useXpFloat } from "../../components/XpFloater";
+import { useCtaRipple } from "../../components/useCtaRipple";
 
 const PAIRS = [
   {
@@ -52,7 +52,7 @@ const PAIRS = [
   },
 ];
 
-export default function Screen5() {
+export default function EvaluationUseCasePage() {
   const navigate = useNavigate();
   const [activated, setActivated] = useState(false);
   const [xpAwarded, setXpAwarded] = useState(false);

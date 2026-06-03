@@ -4,32 +4,16 @@ import { motion, AnimatePresence } from "motion/react";
 import { Map } from "lucide-react";
 import tandemLogo from "../../../LOGO_TANDEM.png";
 
-import { PassportModal } from "./PassportModal";
-import { FacilitatorOverlay } from "./FacilitatorOverlay";
-import { XpPanel } from "./XpPanel";
-import { QuizModal } from "./QuizModal";
-import { TreasureMap } from "./TreasureMap";
+import { PassportModal } from "../components/PassportModal";
+import { FacilitatorOverlay } from "../components/FacilitatorOverlay";
+import { XpPanel } from "../components/XpPanel";
+import { QuizModal } from "../components/QuizModal";
+import { TreasureMap } from "../components/TreasureMap";
 import { setQuizListener } from "../quizStore";
 import { addXp } from "../xpStore";
 import type { QuizQuestion } from "../quizStore";
-
-const ROOMS = [
-  { path: "/step/1", label: "Structurer une séquence de cours", short: "Intro",    icon: "📚", desc: "Introduction au cas d'usage",          color: "#1da82a", time: 2 },
-  { path: "/step/2", label: "Questionnaire structurant",        short: "Infos",    icon: "📝", desc: "Informations essentielles",            color: "#ff33ad", time: 2 },
-  { path: "/step/3", label: "L'IA dans ta pratique",            short: "Recul",    icon: "🔍", desc: "Ce qu'il faut savoir",               color: "#ffd41d", time: 2 },
-  { path: "/step/4", label: "Mission accomplie",                short: "Trophée",  icon: "🏆", desc: "Prompt + Fiche réflexe",             color: "#1da82a", time: 2 },
-];
-
-// Track which rooms granted XP this session to avoid double-awarding
-const XP_ROOMS_KEY = "tandem_xp_rooms";
-function getRoomsWithXp(): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(XP_ROOMS_KEY) || "[]")); } catch { return new Set(); }
-}
-function markRoomXp(path: string) {
-  const s = getRoomsWithXp();
-  s.add(path);
-  localStorage.setItem(XP_ROOMS_KEY, JSON.stringify([...s]));
-}
+import { ROOMS } from "../modules/campus/rooms";
+import { getRoomsWithXp, markRoomXp } from "../modules/campus/roomProgress";
 
 export default function AppLayout() {
   const location = useLocation();

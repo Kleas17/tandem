@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { Copy, Download, Share2, Trophy, CheckCircle } from "lucide-react";
-import { useCtaRipple } from "./useCtaRipple";
+import { useCtaRipple } from "../../components/useCtaRipple";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { getQuizAnswers, getScore } from "../quizStore";
+import { STORAGE_KEYS } from "../../modules/shared/storageKeys";
+import { readJson } from "../../modules/shared/storage";
 
 const PROMPT_1 = `Tu es un assistant pédagogique expert en ingénierie de formation pour le second degré.
 
@@ -57,14 +59,16 @@ function getScoreBadge(correct: number) {
   return { label: "À consolider", color: "#ff33ad", bg: "#fff0fa", border: "rgba(255,51,173,0.25)", emoji: "💡" };
 }
 
-export default function Screen7() {
+export default function TreasureRecapPage() {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [chestOpen, setChestOpen] = useState(false);
   const { triggerRipple, RippleLayer } = useCtaRipple();
 
-  const raw = localStorage.getItem("tandem_profile");
-  const profile = raw ? JSON.parse(raw) : null;
+  const profile = readJson<{ discipline?: string; niveau?: string } | null>(
+    STORAGE_KEYS.profile,
+    null,
+  );
   const answers = getQuizAnswers();
   const score = getScore();
   const badge = getScoreBadge(score.correct);
