@@ -1213,15 +1213,15 @@ export default function Screen4() {
               <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(255,212,29,0.3)", background: "#fffce6" }}>
                 <WandSparkles size={18} style={{ color: "#ffc200" }} />
                 <div className="flex-1">
-                  <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>AFFINER LA PROPOSITION DU CAS 1</div>
-                  <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Demande une variante plus ciblée de la séquence</div>
+                  <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>AFFINER LES PROPOSITIONS DES CAS 1 ET 2</div>
+                  <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Demande une variante plus ciblée de la séquence et de l'évaluation</div>
                 </div>
               </div>
               <div className="p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                   ["concrete", "Plus concret"],
                   ["progressive", "Plus progressif"],
-                  ["differentiated", "Plus différencié©"],
+                  ["differentiated", "Plus différencié"],
                   ["shorter", "Plus court"],
                 ].map(([mode, label]) => (
                   <motion.button
