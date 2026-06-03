@@ -165,7 +165,7 @@ export default function Screen2() {
             style={{
               border: "1px solid rgba(29,168,42,0.3)",
               background: "#edfaee",
-              color: "#1da82a",
+              color: "#1A1208",
               fontSize: 10,
               fontFamily: "monospace",
               letterSpacing: 2,
@@ -181,7 +181,7 @@ export default function Screen2() {
               letterSpacing: -0.5,
             }}
           >
-            Informations <span style={{ color: "#1da82a" }}>essentielles</span>
+            Informations <span style={{ color: "#1A1208" }}>essentielles</span>
           </h1>
           <p style={{ color: "#9C8B76", marginTop: 6, fontSize: 13 }}>
             On verrouille les bases, puis l'IA ne pose des questions
@@ -410,7 +410,7 @@ export default function Screen2() {
                 <div className="flex-1">
                   <div
                     style={{
-                      color: "#1da82a",
+                      color: "#1A1208",
                       fontSize: 9,
                       fontFamily: "monospace",
                       letterSpacing: 2,

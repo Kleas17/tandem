@@ -27,13 +27,13 @@ export default function Screen1() {
         >
           <div
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
-            style={{ border: "1px solid rgba(29,168,42,0.25)", background: "#edfaee", color: "#1da82a", fontSize: 10, fontFamily: "monospace", letterSpacing: 2 }}
+            style={{ border: "1px solid rgba(29,168,42,0.25)", background: "#edfaee", color: "#1A1208", fontSize: 10, fontFamily: "monospace", letterSpacing: 2 }}
           >
             <BookOpen size={10} /> CDI — SALLE 01/04
           </div>
           <h1 style={{ color: "#1A1208", fontSize: "clamp(22px,4vw,34px)", fontWeight: 900, letterSpacing: -0.5 }}>
             Structurer une{" "}
-            <span style={{ color: "#1da82a" }}>séquence de cours</span>
+            <span style={{ color: "#1A1208" }}>séquence de cours</span>
           </h1>
           <p style={{ color: "#9C8B76", marginTop: 6, fontSize: 14 }}>
             Comprendre le cas d'usage avant de passer à la pratique
@@ -61,7 +61,7 @@ export default function Screen1() {
           >
             <BookOpen size={18} style={{ color: "#1da82a" }} />
             <div className="flex-1">
-              <div style={{ color: "#1da82a", fontSize: 9, fontFamily: "monospace", letterSpacing: 2, fontWeight: 700 }}>
+              <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2, fontWeight: 700 }}>
                 BLOC 01
               </div>
               <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 15 }}>
@@ -101,7 +101,7 @@ export default function Screen1() {
           >
             <Lightbulb size={18} style={{ color: "#ffc200" }} />
             <div className="flex-1">
-              <div style={{ color: "#ffc200", fontSize: 9, fontFamily: "monospace", letterSpacing: 2, fontWeight: 700 }}>
+              <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2, fontWeight: 700 }}>
                 BLOC 02
               </div>
               <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 15 }}>
@@ -131,7 +131,7 @@ export default function Screen1() {
               className="rounded-xl px-4 py-3 mt-4"
               style={{ background: "#fff0fa", border: "1px solid rgba(255,51,173,0.25)" }}
             >
-              <p style={{ color: "#ff33ad", fontSize: 13, lineHeight: 1.7, fontWeight: 600 }}>
+              <p style={{ color: "#1A1208", fontSize: 13, lineHeight: 1.7, fontWeight: 600 }}>
                 Mais elle ne construit pas la séquence à ta place. C'est toi qui gardes la maîtrise pédagogique.
               </p>
             </div>

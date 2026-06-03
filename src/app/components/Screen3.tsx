@@ -106,7 +106,7 @@ export default function Screen3() {
             style={{
               border: "1px solid rgba(255,51,173,0.25)",
               background: "#fff0fa",
-              color: "#ff33ad",
+              color: "#1A1208",
               fontSize: 11,
               fontFamily: "monospace",
               letterSpacing: 2,
@@ -115,7 +115,7 @@ export default function Screen3() {
             <BookMarked size={11} /> FICHE MEMO - SALLE 03/04
           </div>
           <h1 style={{ color: "#1A1208", fontSize: "clamp(20px,3.5vw,30px)", fontWeight: 800 }}>
-            L'IA dans ta pratique : <span style={{ color: "#ff33ad" }}>ce qu'il faut savoir</span>
+            L'IA dans ta pratique : <span style={{ color: "#1A1208" }}>ce qu'il faut savoir</span>
           </h1>
           <p style={{ color: "#9C8B76", marginTop: 6, fontSize: 13 }}>
             On combine rappel methodologique et lecture IA personnalisee de ton
@@ -149,7 +149,7 @@ export default function Screen3() {
               <Sparkles size={18} style={{ color: "#1da82a" }} />
             )}
             <div className="flex-1">
-              <div style={{ color: "#1da82a", fontSize: 9, fontFamily: "monospace", letterSpacing: 2, fontWeight: 700 }}>
+              <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2, fontWeight: 700 }}>
                 ANALYSE IA PERSONNALISEE
               </div>
               <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 15 }}>

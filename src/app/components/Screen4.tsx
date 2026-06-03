@@ -213,7 +213,7 @@ function buildPdfDoc(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...colors.muted);
-  doc.text("TANDEM Â· LIVRABLE PERSONNALISE", marginX + 24, y + 24);
+  doc.text("TANDEM · LIVRABLE PERSONNALISE", marginX + 24, y + 24);
   doc.setFontSize(20);
   doc.setTextColor(...colors.ink);
   doc.text(title, marginX + 24, y + 48);
@@ -232,7 +232,7 @@ function buildPdfDoc(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...colors.muted);
-    doc.text(`TANDEM Â· Y-Days 2026 Â· Page ${page}/${pageCount}`, marginX, pageHeight - 16);
+    doc.text(`TANDEM · Y-Days 2026 · Page ${page}/${pageCount}`, marginX, pageHeight - 16);
   }
 
   return doc;
@@ -321,7 +321,7 @@ export default function Screen4() {
     {
       role: "assistant",
       content:
-        "Donne moi une consigne de modification. Je peux soit valider la demande, soit te poser une question avant rÃ©gÃ©nÃ©ration.",
+        "Donne-moi une consigne de modification. Je peux soit valider la demande, soit te poser une question avant régénération.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -359,21 +359,21 @@ export default function Screen4() {
     promptModal?.source === "generic" ? [] : activePromptDetails?.additions ?? [];
   const modalPromptLabel =
     promptModal?.kind === "sequence"
-      ? "Cas 1 - Structurer une sÃ©quence"
-      : "Cas 2 - DiffÃ©rencier une Ã©valuation";
+      ? "Cas 1 - Structurer une séquence"
+      : "Cas 2 - Différencier une évaluation";
   const genericPromptWhy =
     promptModal?.kind === "sequence"
-      ? "Ce prompt gÃ©nÃ©rique donne une base stable pour dÃ©marrer, mÃªme sans personnalisation forte."
-      : "Ce prompt gÃ©nÃ©rique donne une base stable pour explorer la diffÃ©renciation d'une Ã©valuation.";
+      ? "Ce prompt générique donne une base stable pour démarrer, même sans personnalisation forte."
+      : "Ce prompt générique donne une base stable pour explorer la différenciation d'une évaluation.";
   const genericPromptAdditions =
     promptModal?.kind === "sequence"
       ? [
-          "PrÃ©ciser le niveau rÃ©el de la classe et ses Ã©carts de maÃ®trise.",
-          "Ajouter une contrainte de temps, de support ou de modalitÃ© de travail.",
+          "Préciser le niveau réel de la classe et ses écarts de maîtrise.",
+          "Ajouter une contrainte de temps, de support ou de modalité de travail.",
         ]
       : [
-          "PrÃ©ciser la compÃ©tence exacte Ã  Ã©valuer.",
-          "Ajouter les formes d'hÃ©tÃ©rogÃ©nÃ©itÃ© observÃ©es dans la classe.",
+          "Préciser la compétence exacte à évaluer.",
+          "Ajouter les formes d'hétérogénéité observées dans la classe.",
         ];
 
   const runGeneration = async (force = false) => {
@@ -506,7 +506,7 @@ export default function Screen4() {
           ...current,
           [promptModal.kind]: fallback,
         }));
-        setPromptModalError("Impossible de gÃ©nÃ©rer le prompt IA pour le moment.");
+        setPromptModalError("Impossible de générer le prompt IA pour le moment.");
       } finally {
         if (!cancelled) {
           setPromptModalLoading(false);
@@ -526,7 +526,7 @@ export default function Screen4() {
     navigator.clipboard.writeText(modalPromptText).then(() => {
       setCopiedModalPrompt(true);
       setTimeout(() => setCopiedModalPrompt(false), 2000);
-      toast.success("Prompt copiÃ©");
+      toast.success("Prompt copié");
     });
   };
 
@@ -539,7 +539,7 @@ export default function Screen4() {
     ).save(
       "tandem-fiche-sequence.pdf",
     );
-    toast.success("Fiche sÃ©quence tÃ©lÃ©chargÃ©e");
+    toast.success("Fiche séquence téléchargée");
   };
 
   const downloadEvaluationPdf = () => {
@@ -551,7 +551,7 @@ export default function Screen4() {
     ).save(
       "tandem-fiche-evaluation.pdf",
     );
-    toast.success("Fiche Ã©valuation tÃ©lÃ©chargÃ©e");
+    toast.success("Fiche évaluation téléchargée");
   };
 
   const handleShare = () => {
@@ -562,7 +562,7 @@ export default function Screen4() {
       });
     } else {
       navigator.clipboard.writeText(window.location.origin);
-      toast.success("Lien copiÃ©");
+      toast.success("Lien copié");
     }
   };
 
@@ -581,7 +581,7 @@ export default function Screen4() {
         GENERATED_KIT_KEY,
         JSON.stringify({ cacheKey: JSON.stringify(sequence || {}), data: nextKit }),
       );
-      toast.success("Proposition de sÃ©quence affinÃ©e");
+      toast.success("Proposition de séquence affinée");
     } catch {
       toast.error("Impossible d'affiner la proposition");
     } finally {
@@ -647,13 +647,13 @@ export default function Screen4() {
         ...prev,
         {
           role: "assistant",
-          content: "OK, la sÃ©quence a Ã©tÃ© rÃ©gÃ©nÃ©rÃ©e avec cette consigne.",
+          content: "OK, la séquence a été régénérée avec cette consigne.",
         },
       ]);
       setPendingInstructionDraft("");
-      toast.success("SÃ©quence rÃ©gÃ©nÃ©rÃ©e depuis le chat");
+      toast.success("Séquence régénérée depuis le chat");
     } catch {
-      toast.error("Impossible de rÃ©gÃ©nÃ©rer depuis la consigne libre");
+      toast.error("Impossible de régénérer depuis la consigne libre");
     } finally {
       setChatLoading(false);
     }
@@ -663,7 +663,7 @@ export default function Screen4() {
     <div className="flex-1 flex flex-col items-center px-4 py-10">
       <div ref={topRef} className="w-full max-w-5xl">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4" style={{ border: "1px solid rgba(255,212,29,0.3)", background: "#fffce6", color: "#ffd41d", fontSize: 11, fontFamily: "monospace", letterSpacing: 2 }}>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4" style={{ border: "1px solid rgba(255,212,29,0.3)", background: "#fffce6", color: "#1A1208", fontSize: 11, fontFamily: "monospace", letterSpacing: 2 }}>
             <Trophy size={11} /> TROPHEE - SALLE 04/04
           </div>
           <h1 style={{ color: "#1A1208", fontSize: "clamp(22px,4vw,36px)", fontWeight: 800 }}>
@@ -683,8 +683,8 @@ export default function Screen4() {
             <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(255,212,29,0.3)", background: "#fffce6" }}>
               <LoaderCircle size={18} style={{ color: "#ffc200" }} className="animate-spin" />
               <div className="flex-1">
-                <div style={{ color: "#ffc200", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>GENERATION IA EN COURS</div>
-                <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>SynthÃ¨se profil + cas sÃ©quence + cas Ã©valuation</div>
+                <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>GENERATION IA EN COURS</div>
+                <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Synthèse profil + cas séquence + cas évaluation</div>
               </div>
               <span style={{ color: "#ffc200", fontFamily: "monospace", fontSize: 12, fontWeight: 700 }}>{loadingProgress}%</span>
             </div>
@@ -761,7 +761,7 @@ export default function Screen4() {
                               transition: "all 180ms ease",
                             }}
                           >
-                            {source === "ai" ? "Prompt IA" : "Prompt gÃ©nÃ©rique"}
+                            {source === "ai" ? "Prompt IA" : "Prompt générique"}
                           </button>
                         );
                       })}
@@ -789,8 +789,8 @@ export default function Screen4() {
                       >
                         <Bot size={14} />
                         {promptModal.source === "ai"
-                          ? "Prompt gÃ©nÃ©rÃ© par l'IA selon le profil utilisateur"
-                          : "Prompt gÃ©nÃ©rique de dÃ©part"}
+                          ? "Prompt généré par l'IA selon le profil utilisateur"
+                          : "Prompt générique de départ"}
                       </div>
 
                       {promptModal.source === "ai" && promptModalLoading ? (
@@ -800,10 +800,10 @@ export default function Screen4() {
                         >
                           <LoaderCircle size={24} className="animate-spin" />
                           <div style={{ fontSize: 14, fontWeight: 700 }}>
-                            GÃ©nÃ©ration du prompt IA
+                            Génération du prompt IA
                           </div>
                           <div style={{ fontSize: 12.5, color: "rgba(255,248,240,0.78)" }}>
-                            Le prompt se prÃ©pare Ã  partir du profil et du cas dâ€™usage.
+                            Le prompt se prépare à partir du profil et du cas d'usage.
                           </div>
                         </div>
                       ) : (
@@ -831,7 +831,7 @@ export default function Screen4() {
                         <p style={{ color: "#4A3D30", fontSize: 13, lineHeight: 1.7 }}>
                           {promptModal.source === "ai"
                             ? promptModalLoading
-                              ? "L'IA prÃ©pare aussi l'explication du prompt."
+                              ? "L'IA prépare aussi l'explication du prompt."
                               : modalPromptWhy
                             : genericPromptWhy}
                         </p>
@@ -842,12 +842,12 @@ export default function Screen4() {
                         </div>
                         <div className="space-y-2">
                           {(promptModal.source === "ai" && promptModalLoading
-                            ? ["Chargement des pistes dâ€™amÃ©lioration..."]
+                            ? ["Chargement des pistes d'amélioration..."]
                             : promptModal.source === "ai"
                               ? modalPromptAdditions
                               : genericPromptAdditions).map((item) => (
                             <div key={item} className="flex items-start gap-2" style={{ color: "#4A3D30", fontSize: 13, lineHeight: 1.6 }}>
-                              <span style={{ color: "#ff33ad", marginTop: 1 }}>â€¢</span>
+                              <span style={{ color: "#1A1208", marginTop: 1 }}>•</span>
                               <span>{item}</span>
                             </div>
                           ))}
@@ -881,7 +881,7 @@ export default function Screen4() {
                         disabled={promptModal.source === "ai" && promptModalLoading}
                       >
                         <Copy size={16} />
-                        {copiedModalPrompt ? "Prompt copiÃ©" : "Copier le prompt"}
+                        {copiedModalPrompt ? "Prompt copié" : "Copier le prompt"}
                       </motion.button>
                     </div>
                   </div>
@@ -893,9 +893,9 @@ export default function Screen4() {
               <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(255,51,173,0.25)", background: "#fff0fa" }}>
                 <Bot size={18} style={{ color: "#ff33ad" }} />
                 <div className="flex-1">
-                  <div style={{ color: "#ff33ad", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>CHAT DE MODIFICATION</div>
+                  <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>CHAT DE MODIFICATION</div>
                   <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>
-                    Donne une consigne libre, puis rÃ©gÃ©nÃ¨re si la demande est assez claire
+                    Donne une consigne libre, puis régénère si la demande est assez claire
                   </div>
                 </div>
               </div>
@@ -960,7 +960,7 @@ export default function Screen4() {
                         <div style={{ color: "#9C8B76", fontSize: 10, fontFamily: "monospace", marginBottom: 6 }}>ASSISTANT</div>
                         <div className="flex items-center gap-2" style={{ color: "#1A1208", fontSize: 13 }}>
                           <LoaderCircle size={14} className="animate-spin" />
-                          <span>En train d'Ã©crire</span>
+                          <span>En train d'écrire</span>
                           <div className="flex items-center gap-1">
                             {[0, 1, 2].map((dot) => (
                               <motion.span
@@ -987,7 +987,7 @@ export default function Screen4() {
                   <textarea
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Exemple : rends la sÃ©quence plus orientÃ©e travail de groupe et ajoute une Ã©valuation formative intermÃ©diaire."
+                    placeholder="Exemple : rends la séquence plus orientée travail de groupe et ajoute une évaluation formative intermédiaire."
                     rows={3}
                     className="w-full rounded-xl px-4 py-3 outline-none resize-none"
                     style={{
@@ -1083,7 +1083,7 @@ export default function Screen4() {
               <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(29,168,42,0.25)", background: "#edfaee" }}>
                 <Sparkles size={18} style={{ color: "#1da82a" }} />
                 <div className="flex-1">
-                  <div style={{ color: "#1da82a", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>RECOMMANDATION PERSONNALISEE</div>
+                  <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>RECOMMANDATION PERSONNALISEE</div>
                   <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>{kit.recommendation.profileLabel}</div>
                 </div>
               </div>
@@ -1092,7 +1092,7 @@ export default function Screen4() {
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
                     {
-                      title: "Cas 1 - Structurer une sÃ©quence",
+                      title: "Cas 1 - Structurer une séquence",
                       friction: kit.recommendation.case1Friction,
                       usage: kit.recommendation.case1Usage,
                       limit: kit.recommendation.case1Limit,
@@ -1101,7 +1101,7 @@ export default function Screen4() {
                       color: "#1da82a",
                     },
                     {
-                      title: "Cas 2 - DiffÃ©rencier une Ã©valuation",
+                      title: "Cas 2 - Différencier une évaluation",
                       friction: kit.recommendation.case2Friction,
                       usage: kit.recommendation.case2Usage,
                       limit: kit.recommendation.case2Limit,
@@ -1111,7 +1111,7 @@ export default function Screen4() {
                     },
                   ].map((card) => (
                     <div key={card.title} className="rounded-xl p-4" style={{ background: card.bg, border: `1px solid ${card.border}` }}>
-                      <div style={{ color: card.color, fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 8 }}>{card.title.toUpperCase()}</div>
+                      <div style={{ color: "#1A1208", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 8 }}>{card.title.toUpperCase()}</div>
                       <p style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6, marginBottom: 8 }}><strong>Friction :</strong> {card.friction}</p>
                       <p style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6, marginBottom: 8 }}><strong>Usage :</strong> {card.usage}</p>
                       <p style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}><strong>Limite :</strong> {card.limit}</p>
@@ -1124,30 +1124,30 @@ export default function Screen4() {
             <div className="grid xl:grid-cols-2 gap-5 mb-5">
               <div className="rounded-2xl overflow-hidden" style={{ background: "#FFFFFF", borderTop: "3px solid #1da82a", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
                 <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(29,168,42,0.25)", background: "#edfaee" }}>
-                  <div style={{ color: "#1da82a", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>CAS 1 - STRUCTURER UNE SEQUENCE</div>
+                  <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>CAS 1 - STRUCTURER UNE SEQUENCE</div>
                   <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>{kit.sequence.title}</div>
                 </div>
                 <div className="p-5 space-y-4">
                   <p style={{ color: "#4A3D30", fontSize: 13, lineHeight: 1.65 }}>{kit.sequence.overview}</p>
                   <div className="rounded-xl p-4" style={{ background: "#edfaee", border: "1px solid rgba(29,168,42,0.25)" }}>
-                    <div style={{ color: "#1da82a", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 6 }}>POURQUOI CETTE STRUCTURE</div>
+                    <div style={{ color: "#1A1208", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 6 }}>POURQUOI CETTE STRUCTURE</div>
                     <p style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>{kit.sequence.whyThisStructure}</p>
                   </div>
                   <div className="space-y-3">
                     {kit.sequence.sessions.slice(0, 3).map((session, index) => (
                       <div key={`${session.title}-${index}`} className="rounded-xl p-4" style={{ background: "#F9F4EE", border: "1px solid rgba(0,0,0,0.06)" }}>
-                        <div style={{ color: "#1da82a", fontSize: 10, fontFamily: "monospace", marginBottom: 6 }}>SEANCE {index + 1}</div>
+                        <div style={{ color: "#1A1208", fontSize: 10, fontFamily: "monospace", marginBottom: 6 }}>SEANCE {index + 1}</div>
                         <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{session.title}</div>
                         <p style={{ color: "#4A3D30", fontSize: 12.5, lineHeight: 1.6 }}>{session.objective}</p>
                       </div>
                     ))}
                   </div>
                   <div className="rounded-xl p-4" style={{ background: "#fff0fa", border: "1px solid rgba(255,51,173,0.25)" }}>
-                    <div style={{ color: "#ff33ad", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 6 }}>POINTS ENCORE FRAGILES</div>
+                    <div style={{ color: "#1A1208", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 6 }}>POINTS ENCORE FRAGILES</div>
                     <div className="space-y-2">
                       {kit.sequence.fragilePoints.map((item) => (
                         <div key={item} className="flex items-start gap-2" style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>
-                          <span style={{ color: "#ff33ad", marginTop: 2 }}>â€¢</span>
+                          <span style={{ color: "#1A1208", marginTop: 2 }}>•</span>
                           <span>{item}</span>
                         </div>
                       ))}
@@ -1168,27 +1168,27 @@ export default function Screen4() {
 
               <div className="rounded-2xl overflow-hidden" style={{ background: "#FFFFFF", borderTop: "3px solid #ffc200", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
                 <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,212,29,0.3)", background: "#fffce6" }}>
-                  <div style={{ color: "#ffc200", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>CAS 2 - DIFFERENCIER UNE EVALUATION</div>
+                  <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>CAS 2 - DIFFERENCIER UNE EVALUATION</div>
                   <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>{kit.evaluationKit.title}</div>
                 </div>
                 <div className="p-5 space-y-4">
                   <p style={{ color: "#4A3D30", fontSize: 13, lineHeight: 1.65 }}>{kit.evaluationKit.overview}</p>
                   <div className="rounded-xl p-4" style={{ background: "#fffce6", border: "1px solid rgba(255,212,29,0.3)" }}>
-                    <div style={{ color: "#ffc200", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 6 }}>POURQUOI CE CAS D'USAGE</div>
+                    <div style={{ color: "#1A1208", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 6 }}>POURQUOI CE CAS D'USAGE</div>
                     <p style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>{kit.evaluationKit.whyUseful}</p>
                   </div>
                   {[
-                    ["Leviers de diffÃ©renciation", kit.evaluationKit.differentiationLevers],
+                    ["Leviers de différenciation", kit.evaluationKit.differentiationLevers],
                     ["Ce que l'enseignant garde en main", kit.evaluationKit.whatTeacherKeeps],
                     ["Points de vigilance", kit.evaluationKit.vigilancePoints],
                     ["Exemples de variantes", kit.evaluationKit.exampleVariants],
                   ].map(([title, items]) => (
                     <div key={title} className="rounded-xl p-4" style={{ background: "#F9F4EE", border: "1px solid rgba(0,0,0,0.06)" }}>
-                      <div style={{ color: "#ffc200", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 6 }}>{title.toUpperCase()}</div>
+                      <div style={{ color: "#1A1208", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 6 }}>{title.toUpperCase()}</div>
                       <div className="space-y-2">
                         {(items as string[]).map((item) => (
                           <div key={item} className="flex items-start gap-2" style={{ color: "#1A1208", fontSize: 12.5, lineHeight: 1.6 }}>
-                            <span style={{ color: "#ffc200", marginTop: 2 }}>â€¢</span>
+                            <span style={{ color: "#1A1208", marginTop: 2 }}>•</span>
                             <span>{item}</span>
                           </div>
                         ))}
@@ -1213,8 +1213,8 @@ export default function Screen4() {
               <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(255,212,29,0.3)", background: "#fffce6" }}>
                 <WandSparkles size={18} style={{ color: "#ffc200" }} />
                 <div className="flex-1">
-                  <div style={{ color: "#ffc200", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>AFFINER LA PROPOSITION DU CAS 1</div>
-                  <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Demande une variante plus ciblÃ©e de la sÃ©quence</div>
+                  <div style={{ color: "#1A1208", fontSize: 9, fontFamily: "monospace", letterSpacing: 2 }}>AFFINER LA PROPOSITION DU CAS 1</div>
+                  <div style={{ color: "#1A1208", fontWeight: 700, fontSize: 14 }}>Demande une variante plus ciblée de la séquence</div>
                 </div>
               </div>
               <div className="p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1267,17 +1267,17 @@ export default function Screen4() {
             <div className="grid md:grid-cols-2 gap-4 mb-6">
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleShare} className="py-4 rounded-xl flex items-center justify-center gap-3" style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.12)", color: "#4A3D30", fontWeight: 700, fontSize: 14 }}>
                 <Share2 size={18} />
-                Partager ce kit avec un(e) collÃ¨gue
+                Partager ce kit avec un(e) collègue
               </motion.button>
               <motion.button onClick={() => void runGeneration(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="py-4 rounded-xl flex items-center justify-center gap-3" style={{ background: "linear-gradient(135deg,#ffd41d,#ffc200)", color: "#1A1208", fontWeight: 700, fontSize: 14 }}>
                 <RefreshCw size={18} />
-                RÃ©gÃ©nÃ©rer les 2 cas avec l'IA
+                Régénérer les 2 cas avec l'IA
               </motion.button>
             </div>
 
             <div className="flex justify-center">
               <motion.button onClick={() => navigate("/")} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="px-7 py-2.5 rounded-xl inline-flex items-center gap-2" style={{ background: "#FFFFFF", border: "1px solid rgba(255,212,29,0.3)", color: "#ffd41d", fontWeight: 600, fontSize: 13 }}>
-                Retour Ã  l'accueil
+                Retour à l'accueil
               </motion.button>
             </div>
           </>
@@ -1287,4 +1287,3 @@ export default function Screen4() {
     </div>
   );
 }
-

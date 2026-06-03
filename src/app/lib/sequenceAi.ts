@@ -150,8 +150,35 @@ async function callMistralJson(prompt: string, temperature = 0.4) {
   return JSON.parse(rawContent) as unknown;
 }
 
+function fixTextEncoding(value: string) {
+  return value
+    .replace(/Ã©/g, "é")
+    .replace(/Ã¨/g, "è")
+    .replace(/Ãª/g, "ê")
+    .replace(/Ã«/g, "ë")
+    .replace(/Ã /g, "à")
+    .replace(/Ã¢/g, "â")
+    .replace(/Ã®/g, "î")
+    .replace(/Ã¯/g, "ï")
+    .replace(/Ã´/g, "ô")
+    .replace(/Ã¹/g, "ù")
+    .replace(/Ã»/g, "û")
+    .replace(/Ã§/g, "ç")
+    .replace(/Ã‰/g, "É")
+    .replace(/Ã€/g, "À")
+    .replace(/Â·/g, "·")
+    .replace(/â€™/g, "'")
+    .replace(/â€œ/g, '"')
+    .replace(/â€/g, '"')
+    .replace(/â€“|â€”/g, "-")
+    .replace(/â€¢/g, "•")
+    .replace(/\uFFFD/g, "");
+}
+
 function normalizeString(value: unknown, fallback: string) {
-  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+  return typeof value === "string" && value.trim()
+    ? fixTextEncoding(value.trim())
+    : fallback;
 }
 
 function normalizeStringArray(value: unknown, fallbacks: string[]) {
@@ -160,6 +187,35 @@ function normalizeStringArray(value: unknown, fallbacks: string[]) {
     .map((item) => (typeof item === "string" ? item.trim() : ""))
     .filter(Boolean);
   return cleaned.length > 0 ? cleaned : fallbacks;
+}
+
+function parseRequestedSessionCount(sequence: SequenceInput | null) {
+  const raw = sequence?.seances?.trim();
+  if (!raw) return null;
+  const match = raw.match(/\d+/);
+  if (!match) return null;
+  const count = Number(match[0]);
+  return Number.isFinite(count) && count > 0 && count <= 12 ? count : null;
+}
+
+function fitSessionsToRequestedCount(
+  sessions: GeneratedSession[],
+  requestedCount: number | null,
+) {
+  if (!requestedCount) return sessions;
+  if (sessions.length >= requestedCount) return sessions.slice(0, requestedCount);
+
+  const fitted = [...sessions];
+  while (fitted.length < requestedCount) {
+    const index = fitted.length;
+    fitted.push({
+      title: `Séance ${index + 1} - À préciser`,
+      objective: "Objectif à préciser par l'enseignant.",
+      focus: "Point de progression à valider.",
+      activity: "Activité à adapter au contexte de classe.",
+    });
+  }
+  return fitted;
 }
 
 export const FALLBACK_GENERATION: GeneratedSequence = {
@@ -581,13 +637,14 @@ Retourne uniquement un JSON valide, sans markdown, avec exactement cette structu
 
 Contraintes :
 - Reponse en francais.
-- Entre 3 et 8 seances selon le temps disponible.
+- Si un nombre de seances est fourni, retourne exactement ce nombre de seances, ni plus ni moins.
+- Si le nombre de seances est absent ou incomprehensible, retourne entre 3 et 8 seances selon le temps disponible.
 - Chaque seance doit etre concrete et actionnable.
 - whyThisStructure doit expliquer en 2 ou 3 phrases pourquoi ce decoupage est pertinent.
 - Les teacherAdjustments doivent rester du cote enseignant.
 - Ne jamais pretendre connaitre exactement le programme reel si l'info n'est pas fournie.`;
 
-  return normalizeGeneration(await callMistralJson(prompt, 0.45));
+  return normalizeGeneration(await callMistralJson(prompt, 0.45), sequence);
 }
 
 export async function generateEvaluationKit(sequence: SequenceInput | null) {
@@ -837,7 +894,7 @@ Retourne uniquement un JSON valide avec exactement la meme structure que la prop
   "finalAssessment": "string"
 }`;
 
-  return normalizeGeneration(await callMistralJson(prompt, 0.45));
+  return normalizeGeneration(await callMistralJson(prompt, 0.45), sequence);
 }
 
 export async function analyzeChatRefinement(
@@ -944,7 +1001,7 @@ Retourne uniquement un JSON valide avec exactement la meme structure que la prop
   "finalAssessment": "string"
 }`;
 
-  return normalizeGeneration(await callMistralJson(prompt, 0.45));
+  return normalizeGeneration(await callMistralJson(prompt, 0.45), sequence);
 }
 
 function normalizeSessions(value: unknown) {
@@ -972,12 +1029,22 @@ function normalizeSessions(value: unknown) {
   return sessions.length > 0 ? sessions : FALLBACK_GENERATION.sessions;
 }
 
-function normalizeGeneration(payload: unknown): GeneratedSequence {
+function normalizeGeneration(
+  payload: unknown,
+  sequence: SequenceInput | null = null,
+): GeneratedSequence {
   if (!payload || typeof payload !== "object") {
-    return FALLBACK_GENERATION;
+    return {
+      ...FALLBACK_GENERATION,
+      sessions: fitSessionsToRequestedCount(
+        FALLBACK_GENERATION.sessions,
+        parseRequestedSessionCount(sequence),
+      ),
+    };
   }
 
   const data = payload as Record<string, unknown>;
+  const requestedSessionCount = parseRequestedSessionCount(sequence);
 
   return {
     title: normalizeString(data.title, FALLBACK_GENERATION.title),
@@ -989,7 +1056,10 @@ function normalizeGeneration(payload: unknown): GeneratedSequence {
     aiPrompt: normalizeString(data.aiPrompt, ""),
     promptWhyGood: normalizeString(data.promptWhyGood, ""),
     promptAdditions: normalizeStringArray(data.promptAdditions, []),
-    sessions: normalizeSessions(data.sessions),
+    sessions: fitSessionsToRequestedCount(
+      normalizeSessions(data.sessions),
+      requestedSessionCount,
+    ),
     firstSessionHook: normalizeString(
       data.firstSessionHook,
       FALLBACK_GENERATION.firstSessionHook,

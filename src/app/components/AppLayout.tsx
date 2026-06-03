@@ -9,7 +9,6 @@ import { FacilitatorOverlay } from "./FacilitatorOverlay";
 import { XpPanel } from "./XpPanel";
 import { QuizModal } from "./QuizModal";
 import { TreasureMap } from "./TreasureMap";
-import { BellIntro, shouldShowIntro } from "./BellIntro";
 import { setQuizListener } from "../quizStore";
 import { addXp } from "../xpStore";
 import type { QuizQuestion } from "../quizStore";
@@ -38,7 +37,6 @@ export default function AppLayout() {
   const [passportOpen, setPassportOpen] = useState(false);
   const [facilitatorOpen, setFacilitatorOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
-  const [showIntro, setShowIntro] = useState(() => shouldShowIntro());
   const [quizQuestion, setQuizQuestion] = useState<QuizQuestion | null>(null);
   const [quizOnPass, setQuizOnPass] = useState<(() => void) | null>(null);
 
@@ -98,9 +96,6 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen flex flex-col relative" style={{ background: "#FFF8F0" }}>
-
-      {/* Bell intro overlay */}
-      {showIntro && <BellIntro onDone={() => setShowIntro(false)} />}
 
       {/* Subtle warm grid */}
       <div
@@ -175,9 +170,9 @@ export default function AppLayout() {
         className="relative z-30 sticky top-0"
         style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 1px 8px rgba(0,0,0,0.05)" }}
       >
-        <div className="flex items-center justify-between px-5 py-3">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center px-5 py-3">
           {/* Logo */}
-          <button onClick={() => navigate("/")} className="flex items-center flex-shrink-0">
+          <button onClick={() => navigate("/")} className="flex items-center justify-self-start flex-shrink-0">
             <img
               src={tandemLogo}
               alt="TANDEM"
@@ -186,7 +181,7 @@ export default function AppLayout() {
           </button>
 
           {/* Room mini-map */}
-          <div className="hidden md:flex items-center gap-0.5">
+          <div className="hidden md:flex items-center justify-center gap-0.5">
             {ROOMS.map((room, i) => {
               const done = i < currentIndex;
               const active = i === currentIndex;
@@ -210,7 +205,7 @@ export default function AppLayout() {
           </div>
 
           {/* Right: map button + timer + backpack */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center justify-self-end gap-2 flex-shrink-0">
             {/* Treasure map button */}
             <motion.button
               onClick={() => setMapOpen(true)}

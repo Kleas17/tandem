@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight } from "lucide-react";
 import { useCtaRipple } from "./useCtaRipple";
 import confetti from "canvas-confetti";
-import { BellIntro, shouldShowIntro } from "./BellIntro";
 import tandemLogo from "../../../LOGO_TANDEM.png";
 
 const ROOMS = [
@@ -29,7 +28,6 @@ export default function LandingPage() {
   const [launched, setLaunched] = useState(false);
   const [hoveredRoom, setHoveredRoom] = useState<number | null>(null);
   const [bellRang, setBellRang] = useState(false);
-  const [showIntro, setShowIntro] = useState(() => shouldShowIntro());
   const { triggerRipple, RippleLayer } = useCtaRipple();
 
   useEffect(() => {
@@ -48,8 +46,6 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden" style={{ background: "#FFF8F0" }}>
-      {showIntro && <BellIntro onDone={() => setShowIntro(false)} />}
-
       {/* Warm grid — same as AppLayout */}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
