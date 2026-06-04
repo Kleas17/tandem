@@ -51,13 +51,58 @@ export default function CampusBriefingPage() {
         <section className="grid flex-1 items-center gap-7 py-8 lg:grid-cols-[1.08fr_0.92fr]">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
             <div style={{ color: "#ffc200", fontFamily: "monospace", fontSize: 10, letterSpacing: 3, fontWeight: 800, marginBottom: 12 }}>
-              CARTE AU TRÉSOR · 4 SALLES · 3 QUIZ
+              PARCOURS IA · 4 SALLES · 3 QUIZ
             </div>
-            <h1 style={{ color: "#1A1208", fontSize: "clamp(36px,7vw,76px)", lineHeight: 0.92, fontWeight: 900 }}>
-              Ton parcours commence ici
+            <h1
+              style={{
+                color: "#1A1208",
+                fontSize: "clamp(36px,7vw,76px)",
+                lineHeight: 0.9,
+                fontWeight: 900,
+                maxWidth: 720,
+              }}
+            >
+              <span
+                style={{
+                  display: "block",
+                  fontFamily: "'DM Sans', system-ui, sans-serif",
+                  fontSize: "clamp(24px,4.1vw,44px)",
+                  fontStyle: "italic",
+                  fontWeight: 500,
+                  letterSpacing: -1.2,
+                }}
+              >
+                Utiliser l'IA
+              </span>
+              <span
+                style={{
+                  display: "block",
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontSize: "clamp(56px,10vw,110px)",
+                  letterSpacing: 1.5,
+                  color: "#1da82a",
+                  textTransform: "uppercase",
+                  marginTop: 2,
+                }}
+              >
+                pour preparer
+              </span>
+              <span
+                style={{
+                  display: "block",
+                  fontFamily: "monospace",
+                  fontSize: "clamp(16px,2.2vw,24px)",
+                  lineHeight: 1.35,
+                  letterSpacing: 0.8,
+                  color: "#6E5A45",
+                  marginTop: 10,
+                }}
+              >
+                son cours : bonnes pratiques et limites
+              </span>
             </h1>
             <p style={{ color: "#6E5A45", fontSize: 15, lineHeight: 1.75, maxWidth: 560, marginTop: 18 }}>
-              Tu vas traverser le campus TANDEM comme une chasse au trésor: chaque salle débloque une étape de réflexion, un quiz valide les bons réflexes, puis tu repars avec un kit IA utilisable.
+              Tu vas traverser le campus TANDEM comme un parcours guidé: chaque salle débloque une étape de réflexion, un quiz valide les bons réflexes, puis tu repars avec un kit IA utilisable.
             </p>
 
             <div className="mt-6 grid gap-3">

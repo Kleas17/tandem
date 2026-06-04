@@ -121,13 +121,46 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={ready ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.45, delay: 0.15 }}
-            className="mb-3"
+            className="mb-3 flex justify-center w-full"
           >
-            <h1 style={{ color: "#1A1208", fontSize: "clamp(44px, 10vw, 96px)", lineHeight: 0.9, letterSpacing: "0.01em" }}>
-              LA CHASSE{" "}
-              <span style={{ WebkitTextStroke: "2px #ffd41d", color: "transparent" }}>AU TRÉSOR</span>
-              <br />
-              <span style={{ color: "#ffd41d" }}>DU CAMPUS</span>
+            <h1
+              style={{
+                color: "#1A1208",
+                fontSize: "clamp(40px, 7vw, 78px)",
+                lineHeight: 0.9,
+                letterSpacing: "0.01em",
+                width: "fit-content",
+                maxWidth: "100%",
+                margin: "0 auto",
+                fontFamily: "'Bebas Neue', sans-serif",
+                textAlign: "center",
+              }}
+            >
+              <span
+                style={{
+                  display: "block",
+                  WebkitTextStroke: "2px #ffd41d",
+                  color: "transparent",
+                  textShadow: "0 0 26px rgba(255, 212, 29, 0.12)",
+                  fontSize: "clamp(46px, 7vw, 82px)",
+                  letterSpacing: "0.02em",
+                  whiteSpace: "nowrap",
+                  marginBottom: 6,
+                }}
+              >
+                PRÉPARER SON COURS AVEC L'IA
+              </span>
+              <span
+                style={{
+                  display: "block",
+                  color: "#1A1208",
+                  fontSize: "clamp(30px, 4.4vw, 50px)",
+                  letterSpacing: "0.03em",
+                  lineHeight: 0.96,
+                }}
+              >
+                BONNES PRATIQUES ET LIMITES
+              </span>
             </h1>
           </motion.div>
 
