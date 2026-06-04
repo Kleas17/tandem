@@ -53,4 +53,4 @@ export const ROOMS: RoomConfig[] = [
 ];
 
 export const TOTAL_ROOMS = ROOMS.length;
-export const TOTAL_CAMPUS_PROGRESS_ROOMS = 7;
+export const TOTAL_CAMPUS_PROGRESS_ROOMS = 4;
