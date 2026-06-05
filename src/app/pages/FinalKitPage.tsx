@@ -172,6 +172,14 @@ export default function FinalKitPage() {
       writeJson(STORAGE_KEYS.generatedKit, { cacheKey, data: nextKit });
       setKit(nextKit);
       setLoadingProgress(100);
+
+      // Pre-generate prompt details in background so they're ready when the user opens the modal
+      Promise.all([
+        generateSequencePromptDetails(sequence, enrichedSequence),
+        generateEvaluationPromptDetails(sequence, evaluationKit),
+      ]).then(([seqDetails, evalDetails]) => {
+        setPromptModalCache({ sequence: seqDetails, evaluation: evalDetails });
+      }).catch(() => { /* silently fail — will retry on modal open */ });
       window.setTimeout(() => {
         setLoading(false);
         setCelebrating(true);

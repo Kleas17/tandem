@@ -801,8 +801,12 @@ Contexte enseignant :
 - Acquis prealables : ${sequence?.acquis || "Non precise"}
 - Precisions complementaires : ${formatClarifications(sequence, true)}
 
-Proposition de sequence deja generee :
-${JSON.stringify(generated)}
+Resume de la sequence deja generee :
+- Titre : ${generated.title}
+- Vue d'ensemble : ${generated.overview}
+- Structure : ${generated.whyThisStructure}
+- Seances : ${generated.sessions.map((s, i) => `${i + 1}. ${s.title} (${s.objective})`).join(" | ")}
+- Evaluation finale : ${generated.finalAssessment}
 
 Retourne uniquement un JSON valide avec cette structure :
 {
@@ -832,8 +836,12 @@ Contexte enseignant :
 - Acquis prealables : ${sequence?.acquis || "Non precise"}
 - Precisions complementaires : ${formatClarifications(sequence, true)}
 
-Cas d'usage deja genere :
-${JSON.stringify(generated)}
+Resume du cas d'usage deja genere :
+- Titre : ${generated.title}
+- Vue d'ensemble : ${generated.overview}
+- Pourquoi utile : ${generated.whyUseful}
+- Leviers de differenciation : ${generated.differentiationLevers.join(" | ")}
+- Variantes : ${generated.exampleVariants.join(" | ")}
 
 Retourne uniquement un JSON valide avec cette structure :
 {
